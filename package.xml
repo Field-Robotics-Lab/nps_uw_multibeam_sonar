@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>nps_uw_multibeam_sonar</name>
+  <version>0.0.1</version>
+  <description>
+    NPS Multibeam Sonar Plugin with NVIDIA Cuda library
+  </description>
+
+  <maintainer email="woensug.choi.ks@nps.edu">Woensug Choi</maintainer>
+  <author email="woensug.choi.ks@nps.edu">Woensug Choi</author>
+  
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend version_gte="2.5.17">gazebo_ros</depend>
+  <depend>gazebo_dev</depend>
+  <depend>uuv_sensor_ros_plugins</depend>
+  <depend>gazebo_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <!-- From https://github.com/apl-ocean-engineering/acoustic_msgs/tree/main/msg -->
+  <depend>acoustic_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>tf</depend>
+</package>
