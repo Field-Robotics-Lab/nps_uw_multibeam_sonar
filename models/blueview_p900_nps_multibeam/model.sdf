@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="blueview_p900">
+    <link name="forward_sonar_link">
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>4.35</mass>
+        <inertia>
+          <ixx>0.0360</ixx>          <!-- 1/12ml^2 -->
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0</iyy>
+          <iyz>0</iyz>
+          <izz>0.0360</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>model://blueview_p900_nps_multibeam/meshes/COLLISION-p900.dae</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://blueview_p900_nps_multibeam/meshes/p900.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <sensor name="image_sonar" type="depth">
+        <visualize>true</visualize>
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <camera>
+          <!-- 90 degrees for the M900-90 -->
+          <horizontal_fov>1.57079632679</horizontal_fov>
+          <image>
+            <width>512</width>
+            <!-- Set vertical FOV by setting image height -->
+            <!-- For 20 deg. -->
+            <height>114</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>02</near>            <!-- optimal 2m-60m -->
+            <far>60</far>
+          </clip>
+          <depth_camera>
+            <output>depths</output>
+          </depth_camera>
+          <save enabled="true">
+            <path>/tmp/camera</path>
+          </save>
+        </camera>
+        <plugin filename="libnps_multibeam_sonar_ros_plugin.so" name="forward_sonar">
+          <!-- Sonar properties -->
+          <sonarFreq>900e3</sonarFreq>
+          <bandwidth>29.9e3</bandwidth>
+          <soundSpeed>1500</soundSpeed>
+          <sourceLevel>220</sourceLevel>
+          <maxDistance>10</maxDistance>
+          <constantReflectivity>true</constantReflectivity>
+          <raySkips>10</raySkips>
+          <sensorGain>0.02</sensorGain>
+          <plotScaler>10</plotScaler>
+          <writeLog>false</writeLog>
+          <debugFlag>false</debugFlag>
+          <writeFrameInterval>5</writeFrameInterval>
+          <!-- This name is prepended to ROS topics -->
+          <cameraName>blueview_p900</cameraName>
+          <!-- ROS publication topics -->
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
+          <pointCloudTopicName>point_cloud</pointCloudTopicName>
+          <depthImageTopicName>image_depth</depthImageTopicName>
+          <depthImageCameraInfoTopicName>image_depth/camera_info</depthImageCameraInfoTopicName>
+          <sonarImageRawTopicName>sonar_image_raw</sonarImageRawTopicName>
+          <sonarImageTopicName>sonar_image</sonarImageTopicName>
+          <frameName>forward_sonar_optical_link</frameName>
+        </plugin>
+      </sensor>
+    </link>
+  </model>
+</sdf>

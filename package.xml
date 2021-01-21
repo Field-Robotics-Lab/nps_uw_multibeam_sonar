@@ -8,7 +8,7 @@
 
   <maintainer email="woensug.choi.ks@nps.edu">Woensug Choi</maintainer>
   <author email="woensug.choi.ks@nps.edu">Woensug Choi</author>
-  
+
   <license>Apache-2.0</license>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -24,4 +24,8 @@
   <depend>roscpp</depend>
   <depend>rospy</depend>
   <depend>tf</depend>
+  <export>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/>
+    <gazebo_ros gazebo_media_path="${prefix}"/>
+  </export>
 </package>

@@ -1,0 +1,87 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="SeaBat-F50 FLS">
+    <link name="forward_sonar_link">
+      <inertial>
+        <pose>0 0 0 0 0 1.570796</pose>
+        <mass>8.2</mass>
+        <inertia>
+          <ixx>0.151702733</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.012730835</iyy>
+          <iyz>0</iyz>
+          <izz>0.150214768</izz>
+        </inertia>
+      </inertial>
+      <collision name="collision">
+        <pose>0 0 0 0 0 1.570796</pose>
+        <geometry>
+          <box>
+            <size>0.46 0.0907 0.102</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <pose>0 0 0 0 1.570796 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://seabat_f50_nps_multibeam/meshes/SeaBat-F50.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <sensor name="multibeam_sonar" type="depth">
+        <visualize>true</visualize>
+        <always_on>true</always_on>
+        <update_rate>15</update_rate>
+        <camera>
+          <!-- 140 degrees -->
+          <horizontal_fov>2.44346</horizontal_fov>
+          <image>
+            <width>256</width>
+            <!-- Set vertical FOV by setting image height -->
+            <height>1</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>2</near>            <!-- not defined -->
+            <far>250</far>
+          </clip>
+          <depth_camera>
+            <output>depths</output>
+          </depth_camera>
+          <save enabled="true">
+            <path>/tmp/camera</path>
+          </save>
+        </camera>
+        <plugin filename="libnps_multibeam_sonar_ros_plugin.so" name="forward_sonar">
+          <!-- Sonar properties -->
+          <sonarFreq>400e3</sonarFreq>
+          <bandwidth>29.9e3</bandwidth>
+          <soundSpeed>1500</soundSpeed>
+          <sourceLevel>220</sourceLevel>
+          <maxDistance>10</maxDistance>
+          <constantReflectivity>true</constantReflectivity>
+          <raySkips>1</raySkips>
+          <sensorGain>0.02</sensorGain>
+          <plotScaler>10</plotScaler>
+          <writeLog>false</writeLog>
+          <debugFlag>false</debugFlag>
+          <writeFrameInterval>5</writeFrameInterval>
+          <!-- This name is prepended to ROS topics -->
+          <cameraName>seabat_f50</cameraName>
+          <!-- ROS publication topics -->
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
+          <pointCloudTopicName>point_cloud</pointCloudTopicName>
+          <depthImageTopicName>image_depth</depthImageTopicName>
+          <depthImageCameraInfoTopicName>image_depth/camera_info</depthImageCameraInfoTopicName>
+          <sonarImageRawTopicName>sonar_image_raw</sonarImageRawTopicName>
+          <sonarImageTopicName>sonar_image</sonarImageTopicName>
+          <frameName>forward_sonar_optical_link</frameName>
+        </plugin>
+      </sensor>
+    </link>
+  </model>
+</sdf>
