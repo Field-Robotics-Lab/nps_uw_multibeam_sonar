@@ -34,6 +34,9 @@
 #include <sdf/sdf.hh>
 #include <gazebo/sensors/SensorTypes.hh>
 
+#include <gazebo/rendering/Scene.hh>
+#include <gazebo/rendering/Visual.hh>
+
 #include <algorithm>
 #include <string>
 #include <vector>
