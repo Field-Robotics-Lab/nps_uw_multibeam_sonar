@@ -172,18 +172,6 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
     this->sonar_image_topic_name_ =
       _sdf->GetElement("sonarImageTopicName")->Get<std::string>();
 
-
-  if (!_sdf->HasElement("clip"))
-  {
-    gzerr << "We do not have clip" << std::endl;
-  }
-  else
-  {
-    gzerr << "We do have clip" << std::endl;
-    gzerr << _sdf->GetElement("clip")->GetElement("far")->Get<double>()
-          << std::endl;
-  }
-
   // Read sonar properties from model.sdf
   if (!_sdf->HasElement("sonarFreq"))
     this->sonarFreq = 900e3;  // Blueview P900 [Hz]
