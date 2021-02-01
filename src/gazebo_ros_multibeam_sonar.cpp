@@ -221,7 +221,24 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   // Configure skips
   if (this->raySkips == 0) this->raySkips = 1;
 
-  // --- Calculate common sonar parameters ---- //
+  // --- Variational Reflectivity --- //
+  // load the fiducials
+  if (_sdf->HasElement("fiducial"))
+  {
+    sdf::ElementPtr elem = _sdf->GetElement("fiducial");
+    while (elem)
+    {
+      this->fiducials.insert(elem->Get<std::string>());
+      elem = elem->GetNextElement("fiducial");
+    }
+  }
+  else
+  {
+    gzmsg << "No fiducials specified. All models will be tracked."
+        << std::endl;
+    this->detectAll = true;
+  }
+
   // if (this->constMu)
   this->mu = 1e-3;
   // else
@@ -325,6 +342,19 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   GazeboRosCameraUtils::Load(_parent, _sdf);
 }
 
+void NpsGazeboRosMultibeamSonar::PopulateFiducials()
+{
+  this->fiducials.clear();
+
+  // Check all models for inclusion in the frustum.
+  rendering::VisualPtr worldVis = this->scene->WorldVisual();
+  for (unsigned int i = 0; i < worldVis->GetChildCount(); ++i)
+  {
+    rendering::VisualPtr childVis = worldVis->GetChild(i);
+    if (childVis->GetType() == rendering::Visual::VT_MODEL)
+      this->fiducials.insert(childVis->Name());
+  }
+}
 
 void NpsGazeboRosMultibeamSonar::Advertise()
 {
@@ -495,6 +525,71 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
     if ((*this->image_connect_count_) > 0)
     {
       this->PutCameraData(_image);
+    }
+  }
+
+  // For variational reflectivity
+  if (!this->selectionBuffer)
+  {
+    std::string cameraName = this->camera_->OgreCamera()->getName();
+    this->selectionBuffer.reset(
+        new rendering::SelectionBuffer(cameraName,
+        this->scene->OgreSceneManager(),
+        this->camera_->RenderTexture()->getBuffer()->
+        getRenderTarget()));
+  }
+
+  if (this->detectAll)
+    this->PopulateFiducials();
+
+  std::vector<FiducialData> results;
+  for (const auto &f : this->fiducials)
+  {
+    // check if fiducial is visible within the frustum
+    rendering::VisualPtr vis = this->scene->GetVisual(f);
+    if (!vis)
+      continue;
+
+    if (!this->depthCamera->IsVisible(vis))
+      continue;
+
+    // You can set this arbitrarily to whatever pixel
+    // ignition::math::Vector2i pt =
+    //     this->depthCamera->Project(vis->WorldPose().Pos());
+    ignition::math::Vector2i pt = ignition::math::Vector2i(256, 0);
+
+    // use selection buffer to check if visual is occluded by other entities
+    // in the camera view
+    Ogre::Entity *entity =
+      this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
+
+    rendering::VisualPtr result;
+    if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
+    {
+      try
+      {
+        result = this->scene->GetVisual(
+            Ogre::any_cast<std::string>(
+            entity->getUserObjectBindings().getUserAny()));
+      }
+      catch(Ogre::Exception &_e)
+      {
+        gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
+        continue;
+      }
+    }
+
+    if (result && result->GetRootVisual() == vis)
+    {
+      FiducialData fd;
+      fd.id = vis->Name();
+      fd.pt = pt;
+
+      gzerr << "visual: " << vis->Name() << "  ";
+      gzerr << "point: " << pt.X() << ", " << pt.Y() << "  ";
+      gzerr << "    " << width << ", " << height << "\n";
+
+      results.push_back(fd);
     }
   }
 }

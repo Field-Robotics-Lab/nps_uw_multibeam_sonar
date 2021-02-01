@@ -50,7 +50,11 @@ catkin_package(
 ## Plugins
 add_library(nps_multibeam_sonar_ros_plugin
             src/gazebo_ros_multibeam_sonar.cpp
-            src/sonar_calculation_cuda.cu)
+            src/sonar_calculation_cuda.cu
+            src/MaterialSwitcher.cc  # From gazebo/rendering/selection_buffer
+            src/SelectionBuffer.cc  # From gazebo/rendering/selection_buffer
+            src/SelectionRenderListener.cc  # From gazebo/rendering/selection_buffer
+  )
 set_target_properties(nps_multibeam_sonar_ros_plugin
                       PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(nps_multibeam_sonar_ros_plugin
