@@ -138,7 +138,14 @@ namespace gazebo
     private: bool constMu;
     private: double absorption;
     private: double attenuation;
-    private: double mu;  // surface reflectivity
+    // constant reflectivity
+    private: double mu;
+    // variational reflectivity
+    private: std::string reflectivityDatabaseFileName;
+    private: std::string reflectivityDatabaseFilePath;
+    private: std::vector<std::string> objectNames;
+    private: std::vector<double> reflectivities;
+    private: cv::Mat reflectivityImage;
     private: float* rangeVector;
     private: float* window;
     private: float** beamCorrector;

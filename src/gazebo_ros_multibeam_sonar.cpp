@@ -14,6 +14,7 @@
  * limitations under the License.
  *
 */
+#include "ros/package.h"
 
 #include <assert.h>
 #include <sys/stat.h>
@@ -225,6 +226,61 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   if (this->raySkips == 0) this->raySkips = 1;
 
   // --- Variational Reflectivity --- //
+  // Read the variational reflectivity database file path from the SDF file
+  if (!this->constMu)
+  {
+    if (!_sdf->HasElement("reflectivityDatabaseFileName"))
+    {
+      this->reflectivityDatabaseFileName = "variationalReflectivityDatabase";
+    }
+    else
+    {
+      this->reflectivityDatabaseFileName =
+        _sdf->GetElement("reflectivityDatabaseFileName")->Get<std::string>();
+      GZ_ASSERT(!this->reflectivityDatabaseFileName.empty(),
+        "Empty variational reflectivity database file name");
+    }
+  }
+
+  this->mu = 1e-3;  // default constant mu
+
+  this->reflectivityDatabaseFilePath =
+    ros::package::getPath("nps_uw_multibeam_sonar")
+        + "/worlds/" + this->reflectivityDatabaseFileName + ".csv";
+
+  // Read csv file
+  std::ifstream csvFile; std::string line;
+  csvFile.open(this->reflectivityDatabaseFilePath);
+  // skip the 3 lines
+  getline(csvFile, line); getline(csvFile, line); getline(csvFile, line);
+  while (getline(csvFile, line))
+  {
+      if (line.empty())  // skip empty lines:
+      {
+          continue;
+      }
+      std::istringstream iss(line);
+      std::string lineStream;
+      std::string::size_type sz;
+      std::vector <std::string> row;
+      while (getline(iss, lineStream, ','))
+      {
+          row.push_back(lineStream);
+      }
+      this->objectNames.push_back(row[0]);
+      this->reflectivities.push_back(stold(row[1], &sz));
+  }
+
+  // From FiducialCameraPlugin
+  if (this->depthCamera)
+  {
+    this->scene = this->depthCamera->GetScene();
+  }
+  if (!this->depthCamera || !this->scene)
+  {
+    gzerr << "SonarDummy failed to load. "
+        << "Camera and/or Scene not found" << std::endl;
+  }
   // load the fiducials
   if (_sdf->HasElement("fiducial"))
   {
@@ -241,11 +297,6 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
         << std::endl;
     this->detectAll = true;
   }
-
-  // if (this->constMu)
-  this->mu = 1e-3;
-  // else
-  //   // nothing yet
 
   // Transmission path properties (typical model used here)
   // More sophisticated model by Francois-Garrison model is available
@@ -532,6 +583,12 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
   }
 
   // For variational reflectivity
+  // Generate reflectivity opencv image palette
+  cv::Mat reflectivity_image = cv::Mat::zeros(cv::Size(height, width), CV_32FC1);
+
+  gzerr << reflectivity_image.rows << std::endl;
+  gzerr << reflectivity_image.cols << std::endl<< std::endl;
+
   if (!this->selectionBuffer)
   {
     std::string cameraName = this->camera_->OgreCamera()->getName();
@@ -556,45 +613,57 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
     if (!this->depthCamera->IsVisible(vis))
       continue;
 
-    // You can set this arbitrarily to whatever pixel
-    // ignition::math::Vector2i pt =
-    //     this->depthCamera->Project(vis->WorldPose().Pos());
-    ignition::math::Vector2i pt = ignition::math::Vector2i(256, 0);
-
-    // use selection buffer to check if visual is occluded by other entities
-    // in the camera view
-    Ogre::Entity *entity =
-      this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
-
-    rendering::VisualPtr result;
-    if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
+    // Loop over every pixel
+    for (int i=0; i<reflectivity_image.rows; i++)
     {
-      try
+      for (int j=0; j<reflectivity_image.cols; j+=raySkips)
       {
-        result = this->scene->GetVisual(
-            Ogre::any_cast<std::string>(
-            entity->getUserObjectBindings().getUserAny()));
+        // target pixel
+        ignition::math::Vector2i pt = ignition::math::Vector2i(i, j);
+
+        // use selection buffer to check if visual is occluded by other entities
+        // in the camera view
+        Ogre::Entity *entity =
+          this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
+
+        rendering::VisualPtr result;
+        if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
+        {
+          try
+          {
+            result = this->scene->GetVisual(
+                Ogre::any_cast<std::string>(
+                entity->getUserObjectBindings().getUserAny()));
+          }
+          catch(Ogre::Exception &_e)
+          {
+            gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
+            continue;
+          }
+        }
+
+        if (result && result->GetRootVisual() == vis)
+        {
+          FiducialData fd;
+          fd.id = vis->Name();
+          fd.pt = pt;
+
+          // // Assign variational reflectivity
+          // for (int k=0; i<objectNames.size(); k++)
+          //   if (vis->Name() == objectNames[k])
+          //     reflectivity_image.at<double>(i, j) = reflectivities[k];
+
+          // results.push_back(fd);  // Redundant
+        }
+        // Double check empty values and assign default
+        if (reflectivity_image.at<double>(i, j) == 0.0)
+          reflectivity_image.at<double>(i, j) = this->mu;
       }
-      catch(Ogre::Exception &_e)
-      {
-        gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
-        continue;
-      }
-    }
-
-    if (result && result->GetRootVisual() == vis)
-    {
-      FiducialData fd;
-      fd.id = vis->Name();
-      fd.pt = pt;
-
-      gzerr << "visual: " << vis->Name() << "  ";
-      gzerr << "point: " << pt.X() << ", " << pt.Y() << "  ";
-      gzerr << "    " << width << ", " << height << "\n";
-
-      results.push_back(fd);
-    }
+    } // end of pixel loop
   }
+
+  // Save reflectivity image
+  this->reflectivityImage = reflectivity_image;
 }
 
 // Most of the plugin work happens here
