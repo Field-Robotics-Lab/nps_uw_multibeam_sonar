@@ -145,6 +145,11 @@ namespace gazebo
     private: std::string reflectivityDatabaseFilePath;
     private: std::vector<std::string> objectNames;
     private: std::vector<double> reflectivities;
+    private: double maxDepth, maxDepth_before, maxDepth_beforebefore;
+    private: double maxDepth_prev;
+    private: bool calculateReflectivity;
+    private: u_int64_t reflectivity_frameCounter;
+    private: u_int64_t reflectivity_frameInterval;
     private: cv::Mat reflectivityImage;
     private: float* rangeVector;
     private: float* window;
