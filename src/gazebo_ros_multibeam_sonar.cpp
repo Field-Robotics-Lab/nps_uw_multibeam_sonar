@@ -59,6 +59,11 @@ NpsGazeboRosMultibeamSonar::NpsGazeboRosMultibeamSonar() :
   this->sonar_image_connect_count_ = 0;
   this->last_depth_image_camera_info_update_time_ = common::Time(0);
 
+  // frame counter for variational reflectivity
+  this->maxDepth_before = 0.0;
+  this->maxDepth_beforebefore = 0.0;
+  this->maxDepth_prev = 0.0;
+
   // for csv write logs
   this->writeCounter = 0;
   this->writeNumber = 1;
@@ -583,87 +588,106 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
   }
 
   // For variational reflectivity
-  // Generate reflectivity opencv image palette
-  cv::Mat reflectivity_image = cv::Mat::zeros(cv::Size(height, width), CV_32FC1);
-
-  gzerr << reflectivity_image.rows << std::endl;
-  gzerr << reflectivity_image.cols << std::endl<< std::endl;
-
-  if (!this->selectionBuffer)
+  if (!this->constMu)
   {
-    std::string cameraName = this->camera_->OgreCamera()->getName();
-    this->selectionBuffer.reset(
-        new rendering::SelectionBuffer(cameraName,
-        this->scene->OgreSceneManager(),
-        this->camera_->RenderTexture()->getBuffer()->
-        getRenderTarget()));
-  }
-
-  if (this->detectAll)
-    this->PopulateFiducials();
-
-  std::vector<FiducialData> results;
-  for (const auto &f : this->fiducials)
-  {
-    // check if fiducial is visible within the frustum
-    rendering::VisualPtr vis = this->scene->GetVisual(f);
-    if (!vis)
-      continue;
-
-    if (!this->depthCamera->IsVisible(vis))
-      continue;
-
-    // Loop over every pixel
-    for (int i=0; i<reflectivity_image.rows; i++)
+    // Calculate only if the maxDepth from depth camera is changed and stabled
+    double min; cv::minMaxLoc(this->point_cloud_image_, &min, &this->maxDepth);
+    if (this->maxDepth == this->maxDepth_before
+        && this->maxDepth == this->maxDepth_beforebefore
+        && this->calculateReflectivity == false
+        && this->maxDepth != this->maxDepth_prev)
     {
-      for (int j=0; j<reflectivity_image.cols; j+=raySkips)
+      this->calculateReflectivity = true;
+      this->maxDepth_prev = this->maxDepth;
+    }
+    else
+      this->calculateReflectivity = false;
+
+    this->maxDepth_beforebefore = this->maxDepth_before;
+    this->maxDepth_before = this->maxDepth;
+
+    if (calculateReflectivity)
+    {
+      // Generate reflectivity opencv image palette
+      cv::Mat reflectivity_image = cv::Mat::zeros(cv::Size(height, width), CV_32FC1);
+
+      if (!this->selectionBuffer)
       {
-        // target pixel
-        ignition::math::Vector2i pt = ignition::math::Vector2i(i, j);
-
-        // use selection buffer to check if visual is occluded by other entities
-        // in the camera view
-        Ogre::Entity *entity =
-          this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
-
-        rendering::VisualPtr result;
-        if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
-        {
-          try
-          {
-            result = this->scene->GetVisual(
-                Ogre::any_cast<std::string>(
-                entity->getUserObjectBindings().getUserAny()));
-          }
-          catch(Ogre::Exception &_e)
-          {
-            gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
-            continue;
-          }
-        }
-
-        if (result && result->GetRootVisual() == vis)
-        {
-          FiducialData fd;
-          fd.id = vis->Name();
-          fd.pt = pt;
-
-          // // Assign variational reflectivity
-          // for (int k=0; i<objectNames.size(); k++)
-          //   if (vis->Name() == objectNames[k])
-          //     reflectivity_image.at<double>(i, j) = reflectivities[k];
-
-          // results.push_back(fd);  // Redundant
-        }
-        // Double check empty values and assign default
-        if (reflectivity_image.at<double>(i, j) == 0.0)
-          reflectivity_image.at<double>(i, j) = this->mu;
+        std::string cameraName = this->camera_->OgreCamera()->getName();
+        this->selectionBuffer.reset(
+            new rendering::SelectionBuffer(cameraName,
+            this->scene->OgreSceneManager(),
+            this->camera_->RenderTexture()->getBuffer()->
+            getRenderTarget()));
       }
-    } // end of pixel loop
-  }
 
-  // Save reflectivity image
-  this->reflectivityImage = reflectivity_image;
+      if (this->detectAll)
+        this->PopulateFiducials();
+
+      std::vector<FiducialData> results;
+      for (const auto &f : this->fiducials)
+      {
+        // check if fiducial is visible within the frustum
+        rendering::VisualPtr vis = this->scene->GetVisual(f);
+        if (!vis)
+          continue;
+
+        if (!this->depthCamera->IsVisible(vis))
+          continue;
+
+        // Loop over every pixel
+        for (int i=0; i<reflectivity_image.rows; i++)
+        {
+          for (int j=0; j<reflectivity_image.cols; j+=raySkips)
+          {
+            // target pixel
+            ignition::math::Vector2i pt = ignition::math::Vector2i(i, j);
+
+            // use selection buffer to check if visual is occluded by other entities
+            // in the camera view
+            Ogre::Entity *entity =
+              this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
+
+            rendering::VisualPtr result;
+            if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
+            {
+              try
+              {
+                result = this->scene->GetVisual(
+                    Ogre::any_cast<std::string>(
+                    entity->getUserObjectBindings().getUserAny()));
+              }
+              catch(Ogre::Exception &_e)
+              {
+                gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
+                continue;
+              }
+            }
+
+            if (result && result->GetRootVisual() == vis)
+            {
+              FiducialData fd;
+              fd.id = vis->Name();
+              fd.pt = pt;
+
+              // Assign variational reflectivity
+              for (int k=0; k<objectNames.size(); k++)
+                if (vis->Name() == objectNames[k])
+                  reflectivity_image.at<double>(i, j) = reflectivities[k];
+
+              // results.push_back(fd);  // Redundant
+            }
+            // Double check empty values and assign default
+            if (reflectivity_image.at<double>(i, j) == 0.0)
+              reflectivity_image.at<double>(i, j) = this->mu;
+          }
+        } // end of pixel loop
+      }
+
+      // Save reflectivity image
+      this->reflectivityImage = reflectivity_image;
+    }
+  }
 }
 
 // Most of the plugin work happens here
