@@ -234,14 +234,14 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   // Read the variational reflectivity database file path from the SDF file
   if (!this->constMu)
   {
-    if (!_sdf->HasElement("reflectivityDatabaseFileName"))
+    if (!_sdf->HasElement("reflectivityDatabaseFile"))
     {
-      this->reflectivityDatabaseFileName = "variationalReflectivityDatabase";
+      this->reflectivityDatabaseFileName = "variationalReflectivityDatabase.csv";
     }
     else
     {
       this->reflectivityDatabaseFileName =
-        _sdf->GetElement("reflectivityDatabaseFileName")->Get<std::string>();
+        _sdf->GetElement("reflectivityDatabaseFile")->Get<std::string>();
       GZ_ASSERT(!this->reflectivityDatabaseFileName.empty(),
         "Empty variational reflectivity database file name");
     }
@@ -251,7 +251,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
 
   this->reflectivityDatabaseFilePath =
     ros::package::getPath("nps_uw_multibeam_sonar")
-        + "/worlds/" + this->reflectivityDatabaseFileName + ".csv";
+        + "/worlds/" + this->reflectivityDatabaseFileName;
 
   // Read csv file
   std::ifstream csvFile; std::string line;
@@ -273,7 +273,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
           row.push_back(lineStream);
       }
       this->objectNames.push_back(row[0]);
-      this->reflectivities.push_back(stold(row[1], &sz));
+      this->reflectivities.push_back(stof(row[1], &sz));
   }
 
   // From FiducialCameraPlugin
@@ -609,7 +609,7 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
     if (calculateReflectivity)
     {
       // Generate reflectivity opencv image palette
-      cv::Mat reflectivity_image = cv::Mat::zeros(cv::Size(height, width), CV_32FC1);
+      cv::Mat reflectivity_image = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
 
       if (!this->selectionBuffer)
       {
@@ -672,22 +672,21 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
 
               // Assign variational reflectivity
               for (int k=0; k<objectNames.size(); k++)
-                if (vis->Name() == objectNames[k])
-                  reflectivity_image.at<double>(i, j) = reflectivities[k];
+                if (vis->Name() == objectNames[k]){
+                  reflectivity_image.at<float>(j, i) = reflectivities[k];
+                }
 
               // results.push_back(fd);  // Redundant
             }
-            // Double check empty values and assign default
-            if (reflectivity_image.at<double>(i, j) == 0.0)
-              reflectivity_image.at<double>(i, j) = this->mu;
           }
-        } // end of pixel loop
-      }
+        }  // end of pixel loop
+      }  // end of selection buffer
 
       // Save reflectivity image
       this->reflectivityImage = reflectivity_image;
-    }
-  }
+    }  // end of variational reflectivity calculation
+  }  // end of variational reflectivity bool
+
 }
 
 // Most of the plugin work happens here
@@ -710,6 +709,10 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
 
   if (this->beamCorrectorSum == 0)
     ComputeCorrector();
+
+  // Default value for reflectivity
+  if (this->reflectivityImage.rows == 0)
+    this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
@@ -737,7 +740,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                   this->sonarFreq,     // _sonarFreq
                   this->bandwidth,     // _bandwidth
                   this->nFreq,         // _nFreq
-                  this->mu,            // _mu
+                  this->reflectivityImage,  // reflectivity_image
                   this->attenuation,   // _attenuation
                   this->window,        // _window
                   this->beamCorrector,      // _beamCorrector
