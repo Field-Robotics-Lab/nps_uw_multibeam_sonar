@@ -159,6 +159,8 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
                                   int normal_image_step,
                                   float *rand_image,
                                   int rand_image_step,
+                                  float *reflectivity_image,
+                                  int reflectivity_image_step,
                                   float hPixelSize,
                                   float vPixelSize,
                                   float hFOV,
@@ -173,7 +175,7 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
                                   int raySkips,
                                   float sonarFreq, float delta_f,
                                   int nFreq, float bandwidth,
-                                  float mu_sqrt, float attenuation,
+                                  float attenuation,
                                   float area_scaler)
 {
   // 2D Index of current thread
@@ -187,6 +189,8 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     const int depth_index = ray * depth_image_step / sizeof(float) + beam;
     const int normal_index = ray * normal_image_step / sizeof(float) + (3 * beam);
     const int rand_index = ray * rand_image_step / sizeof(float) + (2 * beam);
+    const int reflectivity_index = ray * reflectivity_image_step / sizeof(float) + beam;
+
     // Input parameters for ray processing
     float distance = depth_image[depth_index] * 1.0f;
     float normal[3] = {normal_image[normal_index],
@@ -215,7 +219,7 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     // Calculate amplitude
     thrust::complex<float> randomAmps = thrust::complex<float>(xi_z / sqrt(2.0), xi_y / sqrt(2.0));
     thrust::complex<float> lambert_sqrt =
-        thrust::complex<float>(mu_sqrt * cos(incidence), 0.0);
+        thrust::complex<float>(sqrt(reflectivity_image[reflectivity_index]) * cos(incidence), 0.0);
     thrust::complex<float> beamPattern =
         thrust::complex<float>(azimuthBeamPattern * elevationBeamPattern, 0.0);
     thrust::complex<float> targetArea_sqrt = thrust::complex<float>(sqrt(distance * area_scaler), 0.0);
@@ -279,7 +283,7 @@ namespace NpsGazeboSonar
                                      double _sonarFreq,
                                      double _bandwidth,
                                      int _nFreq,
-                                     double _mu,
+                                     const cv::Mat &reflectivity_image,
                                      double _attenuation,
                                      float *window,
                                      float **beamCorrector,
@@ -305,7 +309,6 @@ namespace NpsGazeboSonar
     const float maxDistance = (float)_maxDistance;
     const float sonarFreq = (float)_sonarFreq;
     const float bandwidth = (float)_bandwidth;
-    const float mu = (float)_mu;
     const float attenuation = (float)_attenuation;
     const int nBeams = _nBeams;
     const int nRays = _nRays;
@@ -321,7 +324,6 @@ namespace NpsGazeboSonar
     const float max_T = max_distance * 2.0 / soundSpeed;
     const float delta_f = 1.0 / max_T;
     // Precalculation
-    const float mu_sqrt = sqrt(mu);
     const float area_scaler = ray_azimuthAngleWidth * ray_elevationAngleWidth;
     const float sourceLevel = (float)_sourceLevel;                     // db re 1 muPa;
     const float pref = 1e-6;                                           // 1 micro pascal (muPa);
@@ -332,12 +334,14 @@ namespace NpsGazeboSonar
     const int depth_image_Bytes = depth_image.step * depth_image.rows;
     const int normal_image_Bytes = normal_image.step * normal_image.rows;
     const int rand_image_Bytes = rand_image.step * rand_image.rows;
+    const int reflectivity_image_Bytes = reflectivity_image.step * reflectivity_image.rows;
 
     //Allocate device memory
-    float *d_depth_image, *d_normal_image, *d_rand_image;
+    float *d_depth_image, *d_normal_image, *d_rand_image, *d_reflectivity_image;
     SAFE_CALL(cudaMalloc((void **)&d_depth_image, depth_image_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_normal_image, normal_image_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_rand_image, rand_image_Bytes), "CUDA Malloc Failed");
+    SAFE_CALL(cudaMalloc((void **)&d_reflectivity_image, reflectivity_image_Bytes), "CUDA Malloc Failed");
 
     //Copy data from OpenCV input image to device memory
     SAFE_CALL(cudaMemcpy(
@@ -350,6 +354,10 @@ namespace NpsGazeboSonar
               "CUDA Memcpy Failed");
     SAFE_CALL(cudaMemcpy(
                   d_rand_image, rand_image.ptr(), rand_image_Bytes,
+                  cudaMemcpyHostToDevice),
+              "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(
+                  d_reflectivity_image, reflectivity_image.ptr(), reflectivity_image_Bytes,
                   cudaMemcpyHostToDevice),
               "CUDA Memcpy Failed");
 
@@ -378,6 +386,8 @@ namespace NpsGazeboSonar
                                        normal_image.step,
                                        d_rand_image,
                                        rand_image.step,
+                                       d_reflectivity_image,
+                                       reflectivity_image.step,
                                        hPixelSize,
                                        vPixelSize,
                                        hFOV,
@@ -392,7 +402,7 @@ namespace NpsGazeboSonar
                                        raySkips,
                                        sonarFreq, delta_f,
                                        nFreq, bandwidth,
-                                       mu_sqrt, attenuation,
+                                       attenuation,
                                        area_scaler);
 
     //Synchronize to check for any kernel launch errors
@@ -407,6 +417,7 @@ namespace NpsGazeboSonar
     cudaFree(d_depth_image);
     cudaFree(d_normal_image);
     cudaFree(d_rand_image);
+    cudaFree(d_reflectivity_image);
     cudaFree(d_P_Beams);
 
     // For calc time measure
