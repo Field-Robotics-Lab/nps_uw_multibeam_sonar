@@ -64,7 +64,7 @@
           <constantReflectivity>true</constantReflectivity>
           <!-- The CSV databsefile is located at the worlds folder -->
           <reflectivityDatabaseFile>variationalReflectivityDatabase.csv</reflectivityDatabaseFile>
-          <raySkips>10</raySkips>
+          <raySkips>0</raySkips>
           <sensorGain>0.02</sensorGain>
           <plotScaler>10</plotScaler>
           <writeLog>false</writeLog>

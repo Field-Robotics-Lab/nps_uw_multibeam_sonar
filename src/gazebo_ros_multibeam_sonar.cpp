@@ -247,7 +247,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
     }
   }
 
-  this->mu = 1e-3;  // default constant mu
+  this->mu = 1e-4;  // default constant mu
 
   this->reflectivityDatabaseFilePath =
     ros::package::getPath("nps_uw_multibeam_sonar")
