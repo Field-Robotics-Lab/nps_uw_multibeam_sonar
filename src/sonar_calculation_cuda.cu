@@ -207,7 +207,7 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     // 				/ ray_azimuthAngleWidth * sin(ray_azimuthAngle)));
     // only one column of rays for each beam at beam center
     float azimuthBeamPattern = 1.0;
-    float elevationBeamPattern = unnormalized_sinc(M_PI * 0.884 / vFOV * sin(ray_elevationAngle));
+    float elevationBeamPattern = unnormalized_sinc(M_PI * 0.884 / ray_elevationAngleWidth * sin(ray_elevationAngle));
     // incidence angle
     float incidence = compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
 

@@ -1105,7 +1105,7 @@ void NpsGazeboRosMultibeamSonar::ComputeCorrector()
       float azimuthBeamPattern =
         unnormalized_sinc(M_PI * 0.884 / hPixelSize
         * sin(beam_azimuthAngle-beam_azimuthAngle_other));
-      this->beamCorrector[beam][beam_other] = azimuthBeamPattern;
+      this->beamCorrector[beam][beam_other] = abs(azimuthBeamPattern);
       this->beamCorrectorSum += pow(azimuthBeamPattern, 2);
     }
   }

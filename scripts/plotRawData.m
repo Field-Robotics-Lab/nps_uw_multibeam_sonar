@@ -12,7 +12,7 @@ FOV = 90/180*pi();
 maxRange = 10;
 xPlotRange = 10;
 yPlotRange = xPlotRange*cos(45/180*pi());
-filename = "../SonarRawData_000001.csv";
+filename = "/tmp/SonarRawData_000001.csv";
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 bw = 29.9e3; % bandwidth
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
