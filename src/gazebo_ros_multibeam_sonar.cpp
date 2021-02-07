@@ -728,9 +728,9 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                   hFOV,          // hFOV
                   vFOV,          // VFOV
                   hPixelSize,    // _beam_azimuthAngleWidth
-                  vPixelSize,    // _beam_elevationAngleWidth
+                  vFOV,          // _beam_elevationAngleWidth
                   hPixelSize,    // _ray_azimuthAngleWidth
-                  vPixelSize*(raySkips),  // _ray_elevationAngleWidth
+                  vPixelSize*(raySkips+1),  // _ray_elevationAngleWidth
                   this->soundSpeed,    // _soundSpeed
                   this->maxDistance,   // _maxDistance
                   this->sourceLevel,   // _sourceLevel
@@ -922,7 +922,6 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
 
   // ---------------------------------------- End of sonar calculation
 
-
   // Still publishing the depth and normal image (just because)
   // Depth image
   this->depth_image_msg_.header.frame_id
@@ -1066,42 +1065,22 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
   this->lock_.unlock();
 }
 
-
-/////////////////////////////////////////////////
-// incidence angle is target's normal angle accounting for the ray's azimuth
-// and elevation
-double NpsGazeboRosMultibeamSonar::ComputeIncidence(double azimuth,
-                                                double elevation,
-                                                cv::Vec3f normal)
-{
-  // ray normal from camera azimuth and elevation
-  double camera_x = cos(-azimuth)*cos(elevation);
-  double camera_y = sin(-azimuth)*cos(elevation);
-  double camera_z = sin(elevation);
-  cv::Vec3f ray_normal(camera_x, camera_y, camera_z);
-
-  // target normal with axes compensated to camera axes
-  cv::Vec3f target_normal(normal[2], -normal[0], -normal[1]);
-
-  // dot product
-  double dot_product = ray_normal.dot(target_normal);
-  return M_PI - acos(dot_product);
-}
-
 /////////////////////////////////////////////////
 // Precalculation of corrector sonar calculation
 void NpsGazeboRosMultibeamSonar::ComputeCorrector()
 {
   double hFOV = this->parentSensor->DepthCamera()->HFOV().Radian();
   double hPixelSize = hFOV / this->width;
+  double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
   // Beam culling correction precalculation
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
-    float beam_azimuthAngle = -(hFOV/2.0) + beam * hPixelSize + hPixelSize/2.0;
+    float beam_azimuthAngle = atan2(static_cast<double>(beam) -
+                        0.5 * static_cast<double>(width-1), fl);
     for (size_t beam_other = 0; beam_other < nBeams; beam_other ++)
     {
-      float beam_azimuthAngle_other
-              = -(hFOV/2.0) + beam_other * hPixelSize + hPixelSize/2.0;
+      float beam_azimuthAngle_other = atan2(static_cast<double>(beam_other) -
+                        0.5 * static_cast<double>(width-1), fl);
       float azimuthBeamPattern =
         unnormalized_sinc(M_PI * 0.884 / hPixelSize
         * sin(beam_azimuthAngle-beam_azimuthAngle_other));
