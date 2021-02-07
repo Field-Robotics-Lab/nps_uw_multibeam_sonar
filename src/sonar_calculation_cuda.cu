@@ -73,11 +73,6 @@ __device__ float compute_incidence(float azimuth, float elevation, float *normal
                       + ray_normal[1] * target_normal[1]
                       + ray_normal[2] * target_normal[2];
 
-  if (dot_product < -1.0)
-    dot_product = -1.0;
-  if (dot_product > 1.0)
-    dot_product = 1.0;
-
   return M_PI - acosf(dot_product);
 }
 
@@ -209,8 +204,8 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     // 				/ ray_azimuthAngleWidth * sin(ray_azimuthAngle)));
     // only one column of rays for each beam at beam center, interference calculated later
     float azimuthBeamPattern = 1.0;
-    // assumes indepndent elevation rays without interference
-    float elevationBeamPattern = 1.0;
+    float elevationBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
+      				                    / vFOV * sin(ray_elevationAngle)));
 
     // incidence angle
     float incidence = compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
@@ -223,7 +218,7 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     // Calculate amplitude
     thrust::complex<float> randomAmps = thrust::complex<float>(xi_z / sqrt(2.0), xi_y / sqrt(2.0));
     thrust::complex<float> lambert_sqrt =
-        thrust::complex<float>(sqrt(reflectivity_image[reflectivity_index]) * cos(incidence), 0.0);
+        thrust::complex<float>(sqrt(reflectivity_image[reflectivity_index]) * (1.0-cos(incidence)), 0.0);
     thrust::complex<float> beamPattern =
         thrust::complex<float>(azimuthBeamPattern * elevationBeamPattern, 0.0);
     thrust::complex<float> targetArea_sqrt = thrust::complex<float>(sqrt(distance * area_scaler), 0.0);
