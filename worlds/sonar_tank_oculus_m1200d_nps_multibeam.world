@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <gui>
+      <camera name='user_camera'>
+        <pose>1.84 -1.4 3.37 0 0.66 2.42</pose>
+      </camera>
+    </gui>
+
+    <!-- basement tank -->
+    <include>
+      <uri>model://cylinder_sonar_tank</uri>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- cylinder target -->
+    <include>
+      <uri>model://rod_target</uri>
+      <pose>0 1.6 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- plate target -->
+    <include>
+      <uri>model://plate_target</uri>
+      <pose>-1.6 0 0.6 0 0.2 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- Oculus m1200d -->
+    <include>
+      <uri>model://oculus_m1200d_nps_multibeam</uri>
+      <name>oculus_m1200d</name>
+      <pose>0 0 1.5 0 0.4 1.5709</pose>
+      <static>true</static>
+    </include>
+
+  </world>
+</sdf>
+
