@@ -247,7 +247,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
     }
   }
 
-  this->mu = 1e-4;  // default constant mu
+  this->mu = 1e-3;  // default constant mu
 
   this->reflectivityDatabaseFilePath =
     ros::package::getPath("nps_uw_multibeam_sonar")
@@ -672,9 +672,8 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
 
               // Assign variational reflectivity
               for (int k=0; k<objectNames.size(); k++)
-                if (vis->Name() == objectNames[k]){
+                if (vis->Name() == objectNames[k])
                   reflectivity_image.at<float>(j, i) = reflectivities[k];
-                }
 
               // results.push_back(fd);  // Redundant
             }

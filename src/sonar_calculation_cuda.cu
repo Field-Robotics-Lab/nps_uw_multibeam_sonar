@@ -66,7 +66,7 @@ __device__ float compute_incidence(float azimuth, float elevation, float *normal
   float ray_normal[3] = {camera_x, camera_y, camera_z};
 
   // target normal with axes compensated to camera axes
-  float target_normal[3] = {normal[0], normal[1], normal[2]};
+  float target_normal[3] = {normal[2], -normal[0], -normal[1]};
 
   // dot product
   float dot_product = ray_normal[0] * target_normal[0]
@@ -205,10 +205,10 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     // only one column of rays for each beam at beam center, interference calculated later
     float azimuthBeamPattern = 1.0;
     float elevationBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
-      				                    / vFOV * sin(ray_elevationAngle)));
+      				                    / (beam_elevationAngleWidth) * sin(ray_elevationAngle)));
 
     // incidence angle
-    float incidence = compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
+    float incidence = acos(normal[2]); // compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
 
     // ----- Point scattering model ------ //
     // Gaussian noise generated using opencv RNG
@@ -218,7 +218,7 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     // Calculate amplitude
     thrust::complex<float> randomAmps = thrust::complex<float>(xi_z / sqrt(2.0), xi_y / sqrt(2.0));
     thrust::complex<float> lambert_sqrt =
-        thrust::complex<float>(sqrt(reflectivity_image[reflectivity_index]) * (1.0-cos(incidence)), 0.0);
+        thrust::complex<float>(sqrt(reflectivity_image[reflectivity_index]) * cos(incidence), 0.0);
     thrust::complex<float> beamPattern =
         thrust::complex<float>(azimuthBeamPattern * elevationBeamPattern, 0.0);
     thrust::complex<float> targetArea_sqrt = thrust::complex<float>(sqrt(distance * area_scaler), 0.0);
