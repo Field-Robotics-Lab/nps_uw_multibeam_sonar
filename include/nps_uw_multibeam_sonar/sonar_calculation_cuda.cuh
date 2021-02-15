@@ -60,7 +60,7 @@ namespace NpsGazeboSonar
                                      double _sonarFreq,
                                      double _bandwidth,
                                      int _nFreq,
-                                     double _mu,
+                                     const cv::Mat &reflectivity_image,
                                      double _attenuation,
                                      float *_window,
                                      float **_beamCorrector,

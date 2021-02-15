@@ -14,6 +14,7 @@
  * limitations under the License.
  *
 */
+#include "ros/package.h"
 
 #include <assert.h>
 #include <sys/stat.h>
@@ -33,6 +34,9 @@
 #include <gazebo/sensors/Sensor.hh>
 #include <sdf/sdf.hh>
 #include <gazebo/sensors/SensorTypes.hh>
+
+#include <gazebo/rendering/Scene.hh>
+#include <gazebo/rendering/Visual.hh>
 
 #include <algorithm>
 #include <string>
@@ -54,6 +58,11 @@ NpsGazeboRosMultibeamSonar::NpsGazeboRosMultibeamSonar() :
   this->point_cloud_connect_count_ = 0;
   this->sonar_image_connect_count_ = 0;
   this->last_depth_image_camera_info_update_time_ = common::Time(0);
+
+  // frame counter for variational reflectivity
+  this->maxDepth_before = 0.0;
+  this->maxDepth_beforebefore = 0.0;
+  this->maxDepth_prev = 0.0;
 
   // for csv write logs
   this->writeCounter = 0;
@@ -221,11 +230,78 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   // Configure skips
   if (this->raySkips == 0) this->raySkips = 1;
 
-  // --- Calculate common sonar parameters ---- //
-  // if (this->constMu)
-  this->mu = 1e-3;
-  // else
-  //   // nothing yet
+  // --- Variational Reflectivity --- //
+  // Read the variational reflectivity database file path from the SDF file
+  if (!this->constMu)
+  {
+    if (!_sdf->HasElement("reflectivityDatabaseFile"))
+    {
+      this->reflectivityDatabaseFileName = "variationalReflectivityDatabase.csv";
+    }
+    else
+    {
+      this->reflectivityDatabaseFileName =
+        _sdf->GetElement("reflectivityDatabaseFile")->Get<std::string>();
+      GZ_ASSERT(!this->reflectivityDatabaseFileName.empty(),
+        "Empty variational reflectivity database file name");
+    }
+  }
+
+  this->mu = 1e-3;  // default constant mu
+
+  this->reflectivityDatabaseFilePath =
+    ros::package::getPath("nps_uw_multibeam_sonar")
+        + "/worlds/" + this->reflectivityDatabaseFileName;
+
+  // Read csv file
+  std::ifstream csvFile; std::string line;
+  csvFile.open(this->reflectivityDatabaseFilePath);
+  // skip the 3 lines
+  getline(csvFile, line); getline(csvFile, line); getline(csvFile, line);
+  while (getline(csvFile, line))
+  {
+      if (line.empty())  // skip empty lines:
+      {
+          continue;
+      }
+      std::istringstream iss(line);
+      std::string lineStream;
+      std::string::size_type sz;
+      std::vector <std::string> row;
+      while (getline(iss, lineStream, ','))
+      {
+          row.push_back(lineStream);
+      }
+      this->objectNames.push_back(row[0]);
+      this->reflectivities.push_back(stof(row[1], &sz));
+  }
+
+  // From FiducialCameraPlugin
+  if (this->depthCamera)
+  {
+    this->scene = this->depthCamera->GetScene();
+  }
+  if (!this->depthCamera || !this->scene)
+  {
+    gzerr << "SonarDummy failed to load. "
+        << "Camera and/or Scene not found" << std::endl;
+  }
+  // load the fiducials
+  if (_sdf->HasElement("fiducial"))
+  {
+    sdf::ElementPtr elem = _sdf->GetElement("fiducial");
+    while (elem)
+    {
+      this->fiducials.insert(elem->Get<std::string>());
+      elem = elem->GetNextElement("fiducial");
+    }
+  }
+  else
+  {
+    gzmsg << "No fiducials specified. All models will be tracked."
+        << std::endl;
+    this->detectAll = true;
+  }
 
   // Transmission path properties (typical model used here)
   // More sophisticated model by Francois-Garrison model is available
@@ -325,6 +401,19 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   GazeboRosCameraUtils::Load(_parent, _sdf);
 }
 
+void NpsGazeboRosMultibeamSonar::PopulateFiducials()
+{
+  this->fiducials.clear();
+
+  // Check all models for inclusion in the frustum.
+  rendering::VisualPtr worldVis = this->scene->WorldVisual();
+  for (unsigned int i = 0; i < worldVis->GetChildCount(); ++i)
+  {
+    rendering::VisualPtr childVis = worldVis->GetChild(i);
+    if (childVis->GetType() == rendering::Visual::VT_MODEL)
+      this->fiducials.insert(childVis->Name());
+  }
+}
 
 void NpsGazeboRosMultibeamSonar::Advertise()
 {
@@ -497,6 +586,107 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
       this->PutCameraData(_image);
     }
   }
+
+  // For variational reflectivity
+  if (!this->constMu)
+  {
+    // Calculate only if the maxDepth from depth camera is changed and stabled
+    double min; cv::minMaxLoc(this->point_cloud_image_, &min, &this->maxDepth);
+    if (this->maxDepth == this->maxDepth_before
+        && this->maxDepth == this->maxDepth_beforebefore
+        && this->calculateReflectivity == false
+        && this->maxDepth != this->maxDepth_prev)
+    {
+      this->calculateReflectivity = true;
+      this->maxDepth_prev = this->maxDepth;
+    }
+    else
+      this->calculateReflectivity = false;
+
+    this->maxDepth_beforebefore = this->maxDepth_before;
+    this->maxDepth_before = this->maxDepth;
+
+    if (calculateReflectivity)
+    {
+      // Generate reflectivity opencv image palette
+      cv::Mat reflectivity_image = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
+
+      if (!this->selectionBuffer)
+      {
+        std::string cameraName = this->camera_->OgreCamera()->getName();
+        this->selectionBuffer.reset(
+            new rendering::SelectionBuffer(cameraName,
+            this->scene->OgreSceneManager(),
+            this->camera_->RenderTexture()->getBuffer()->
+            getRenderTarget()));
+      }
+
+      if (this->detectAll)
+        this->PopulateFiducials();
+
+      std::vector<FiducialData> results;
+      for (const auto &f : this->fiducials)
+      {
+        // check if fiducial is visible within the frustum
+        rendering::VisualPtr vis = this->scene->GetVisual(f);
+        if (!vis)
+          continue;
+
+        if (!this->depthCamera->IsVisible(vis))
+          continue;
+
+        // Loop over every pixel
+        for (int i=0; i<reflectivity_image.rows; i++)
+        {
+          for (int j=0; j<reflectivity_image.cols; j+=raySkips)
+          {
+            // target pixel
+            ignition::math::Vector2i pt = ignition::math::Vector2i(i, j);
+
+            // use selection buffer to check if visual is occluded by other entities
+            // in the camera view
+            Ogre::Entity *entity =
+              this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
+
+            rendering::VisualPtr result;
+            if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
+            {
+              try
+              {
+                result = this->scene->GetVisual(
+                    Ogre::any_cast<std::string>(
+                    entity->getUserObjectBindings().getUserAny()));
+              }
+              catch(Ogre::Exception &_e)
+              {
+                gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
+                continue;
+              }
+            }
+
+            if (result && result->GetRootVisual() == vis)
+            {
+              FiducialData fd;
+              fd.id = vis->Name();
+              fd.pt = pt;
+
+              // Assign variational reflectivity
+              for (int k=0; k<objectNames.size(); k++)
+                if (vis->Name() == objectNames[k]){
+                  reflectivity_image.at<float>(j, i) = reflectivities[k];
+                }
+
+              // results.push_back(fd);  // Redundant
+            }
+          }
+        }  // end of pixel loop
+      }  // end of selection buffer
+
+      // Save reflectivity image
+      this->reflectivityImage = reflectivity_image;
+    }  // end of variational reflectivity calculation
+  }  // end of variational reflectivity bool
+
 }
 
 // Most of the plugin work happens here
@@ -519,6 +709,10 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
 
   if (this->beamCorrectorSum == 0)
     ComputeCorrector();
+
+  // Default value for reflectivity
+  if (this->reflectivityImage.rows == 0)
+    this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
@@ -546,7 +740,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                   this->sonarFreq,     // _sonarFreq
                   this->bandwidth,     // _bandwidth
                   this->nFreq,         // _nFreq
-                  this->mu,            // _mu
+                  this->reflectivityImage,  // reflectivity_image
                   this->attenuation,   // _attenuation
                   this->window,        // _window
                   this->beamCorrector,      // _beamCorrector

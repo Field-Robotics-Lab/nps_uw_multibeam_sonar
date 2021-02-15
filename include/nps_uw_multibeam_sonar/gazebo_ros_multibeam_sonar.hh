@@ -58,6 +58,12 @@
 #include <gazebo/sensors/SensorTypes.hh>
 #include <gazebo/plugins/DepthCameraPlugin.hh>
 
+// For variational reflectivity
+#include <sdf/Element.hh>
+#include <gazebo/rendering/Scene.hh>
+#include <gazebo/rendering/Visual.hh>
+#include "selection_buffer/SelectionBuffer.hh"
+
 
 namespace gazebo
 {
@@ -80,6 +86,22 @@ namespace gazebo
     /// \brief Load the plugin
     /// \param take in SDF root element
     public: virtual void Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf);
+
+    /// \brief Helper function to fill the list of fiducials with all models
+    /// in the world if none are specified
+    private: void PopulateFiducials();
+    // From FiducialCameraPlugin
+    /// \brief Selection buffer used for occlusion detection
+    public: std::unique_ptr<rendering::SelectionBuffer> selectionBuffer;
+
+    /// \brief Pointer to the scene.
+    public: rendering::ScenePtr scene;
+
+    /// \brief True to detect all objects in the world.
+    public: bool detectAll = false;
+
+    /// \brief A list of fiducials tracked by this camera.
+    public: std::set<std::string> fiducials;
 
     /// \brief Advertise point cloud and depth image
     public: virtual void Advertise();
@@ -116,7 +138,17 @@ namespace gazebo
     private: bool constMu;
     private: double absorption;
     private: double attenuation;
-    private: double mu;  // surface reflectivity
+    // constant reflectivity
+    private: double mu;
+    // variational reflectivity
+    private: std::string reflectivityDatabaseFileName;
+    private: std::string reflectivityDatabaseFilePath;
+    private: std::vector<std::string> objectNames;
+    private: std::vector<float> reflectivities;
+    private: double maxDepth, maxDepth_before, maxDepth_beforebefore;
+    private: double maxDepth_prev;
+    private: bool calculateReflectivity;
+    private: cv::Mat reflectivityImage;
     private: float* rangeVector;
     private: float* window;
     private: float** beamCorrector;
@@ -244,5 +276,16 @@ namespace gazebo
       return 1.0;
     }
   }
+
+  /// \brief A class to store fiducial data
+  class FiducialData
+  {
+    /// \brief Fiducial ID
+    public: std::string id;
+
+    /// \brief Center point of the fiducial in the image
+    public: ignition::math::Vector2i pt;
+  };
+
 }
 #endif
