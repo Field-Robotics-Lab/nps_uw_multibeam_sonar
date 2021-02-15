@@ -69,14 +69,9 @@ __device__ float compute_incidence(float azimuth, float elevation, float *normal
   float target_normal[3] = {normal[2], -normal[0], -normal[1]};
 
   // dot product
-  float dot_product = ray_normal[0] * target_normal[0] + ray_normal[1] * target_normal[1] + ray_normal[2] * target_normal[2];
-
-  if (dot_product < -1.0)
-    dot_product = -1.0;
-  if (dot_product > 1.0)
-    dot_product = 1.0;
-
-  //   printf("TEST    %f \n", dot_product);
+  float dot_product = ray_normal[0] * target_normal[0]
+                      + ray_normal[1] * target_normal[1]
+                      + ray_normal[2] * target_normal[2];
 
   return M_PI - acosf(dot_product);
 }
@@ -196,20 +191,24 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
     float normal[3] = {normal_image[normal_index],
                       normal_image[normal_index + 1],
                       normal_image[normal_index + 2]};
+
+    // Calculate ray angles
     double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
     float ray_azimuthAngle = atan2(static_cast<double>(beam) -
-                      0.5 * static_cast<double>(width-1), fl);
+                        0.5 * static_cast<double>(width-1), fl);
     float ray_elevationAngle = atan2(static_cast<double>(ray) -
-                      0.5 * static_cast<double>(height-1), fl);
+                        0.5 * static_cast<double>(height-1), fl);
 
     // Beam pattern
     // float azimuthBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
     // 				/ ray_azimuthAngleWidth * sin(ray_azimuthAngle)));
-    // only one column of rays for each beam at beam center
+    // only one column of rays for each beam at beam center, interference calculated later
     float azimuthBeamPattern = 1.0;
-    float elevationBeamPattern = unnormalized_sinc(M_PI * 0.884 / vFOV * sin(ray_elevationAngle));
+    float elevationBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
+      				                    / (beam_elevationAngleWidth) * sin(ray_elevationAngle)));
+
     // incidence angle
-    float incidence = compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
+    float incidence = acos(normal[2]); // compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
 
     // ----- Point scattering model ------ //
     // Gaussian noise generated using opencv RNG
@@ -344,22 +343,14 @@ namespace NpsGazeboSonar
     SAFE_CALL(cudaMalloc((void **)&d_reflectivity_image, reflectivity_image_Bytes), "CUDA Malloc Failed");
 
     //Copy data from OpenCV input image to device memory
-    SAFE_CALL(cudaMemcpy(
-                  d_depth_image, depth_image.ptr(), depth_image_Bytes,
-                  cudaMemcpyHostToDevice),
-              "CUDA Memcpy Failed");
-    SAFE_CALL(cudaMemcpy(
-                  d_normal_image, normal_image.ptr(), normal_image_Bytes,
-                  cudaMemcpyHostToDevice),
-              "CUDA Memcpy Failed");
-    SAFE_CALL(cudaMemcpy(
-                  d_rand_image, rand_image.ptr(), rand_image_Bytes,
-                  cudaMemcpyHostToDevice),
-              "CUDA Memcpy Failed");
-    SAFE_CALL(cudaMemcpy(
-                  d_reflectivity_image, reflectivity_image.ptr(), reflectivity_image_Bytes,
-                  cudaMemcpyHostToDevice),
-              "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_depth_image, depth_image.ptr(), depth_image_Bytes,
+                  cudaMemcpyHostToDevice), "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_normal_image, normal_image.ptr(), normal_image_Bytes,
+                  cudaMemcpyHostToDevice),"CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_rand_image, rand_image.ptr(), rand_image_Bytes,
+                  cudaMemcpyHostToDevice),"CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_reflectivity_image, reflectivity_image.ptr(), reflectivity_image_Bytes,
+                  cudaMemcpyHostToDevice), "CUDA Memcpy Failed");
 
     //Specify a reasonable block size
     const dim3 block(BLOCK_SIZE, BLOCK_SIZE);
@@ -368,7 +359,7 @@ namespace NpsGazeboSonar
     const dim3 grid((depth_image.cols + block.x - 1) / block.x,
                     (depth_image.rows + block.y - 1) / block.y);
 
-    // Pixcel array
+    // Beam data array
     thrust::complex<float> *P_Beams;
     thrust::complex<float> *d_P_Beams;
     const int P_Beams_N = nBeams * (int)(nRays / raySkips) * (nFreq + 1);
@@ -410,8 +401,7 @@ namespace NpsGazeboSonar
 
     //Copy back data from destination device meory to OpenCV output image
     SAFE_CALL(cudaMemcpy(P_Beams, d_P_Beams, P_Beams_Bytes,
-                         cudaMemcpyDeviceToHost),
-              "CUDA Memcpy Failed");
+                         cudaMemcpyDeviceToHost), "CUDA Memcpy Failed");
 
     // Free GPU memory
     cudaFree(d_depth_image);
@@ -425,7 +415,8 @@ namespace NpsGazeboSonar
     {
       stop = std::chrono::high_resolution_clock::now();
       duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-      printf("GPU Sonar Computation Time %lld/100 [s]\n", static_cast<long long int>(duration.count() / 10000));
+      printf("GPU Sonar Computation Time %lld/100 [s]\n",
+              static_cast<long long int>(duration.count() / 10000));
       start = std::chrono::high_resolution_clock::now();
     }
 
@@ -476,8 +467,10 @@ namespace NpsGazeboSonar
       SAFE_CALL(cudaMemcpy(d_P_Ray_imag, P_Ray_imag, P_Ray_Bytes, cudaMemcpyHostToDevice),
                 "CUDA Memcpy Failed");
 
-      column_sums_reduce<<<dimGrid_Ray, dimBlock>>>(d_P_Ray_real, d_P_Ray_F_real, nFreq, (int)(nRays / raySkips));
-      column_sums_reduce<<<dimGrid_Ray, dimBlock>>>(d_P_Ray_imag, d_P_Ray_F_imag, nFreq, (int)(nRays / raySkips));
+      column_sums_reduce<<<dimGrid_Ray, dimBlock>>>(d_P_Ray_real, d_P_Ray_F_real,
+                                                    nFreq, (int)(nRays / raySkips));
+      column_sums_reduce<<<dimGrid_Ray, dimBlock>>>(d_P_Ray_imag, d_P_Ray_F_imag,
+                                                    nFreq, (int)(nRays / raySkips));
 
       SAFE_CALL(cudaMemcpy(P_Ray_F_real, d_P_Ray_F_real, P_Ray_F_Bytes,
                            cudaMemcpyDeviceToHost), "CUDA Memcpy Failed");

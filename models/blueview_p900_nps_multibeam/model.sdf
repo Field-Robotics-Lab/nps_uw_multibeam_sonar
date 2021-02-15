@@ -44,7 +44,7 @@
             <format>R8G8B8</format>
           </image>
           <clip>
-            <near>02</near>            <!-- optimal 2m-60m -->
+            <near>0.2</near>            <!-- optimal 2m-60m -->
             <far>60</far>
           </clip>
           <depth_camera>
@@ -66,7 +66,7 @@
           <reflectivityDatabaseFile>variationalReflectivityDatabase.csv</reflectivityDatabaseFile>
           <raySkips>10</raySkips>
           <sensorGain>0.02</sensorGain>
-          <plotScaler>10</plotScaler>
+          <plotScaler>2.5</plotScaler>
           <writeLog>false</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
