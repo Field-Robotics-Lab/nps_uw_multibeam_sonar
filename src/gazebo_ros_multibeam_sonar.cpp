@@ -674,7 +674,6 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
               for (int k=0; k<objectNames.size(); k++)
                 if (vis->Name() == objectNames[k])
                   reflectivity_image.at<float>(j, i) = reflectivities[k];
-                }
               // results.push_back(fd);  // Redundant
             }
           }
