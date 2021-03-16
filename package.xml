@@ -19,7 +19,7 @@
   <depend>uuv_sensor_ros_plugins</depend>
   <depend>gazebo_msgs</depend>
   <depend>sensor_msgs</depend>
-  <!-- From https://github.com/apl-ocean-engineering/acoustic_msgs/tree/main/msg -->
+  <!-- From https://github.com/apl-ocean-engineering/hydrographic_msgs -->
   <depend>acoustic_msgs</depend>
   <depend>std_msgs</depend>
   <depend>roscpp</depend>

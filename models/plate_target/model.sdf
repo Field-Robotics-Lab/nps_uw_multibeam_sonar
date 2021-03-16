@@ -17,14 +17,16 @@
       <collision name="collision">
         <geometry>
           <box>
-            <size>1.2 2 0.05</size>
+            <!-- 50 x 60 cm square -->
+            <size>0.5 0.6 0.01</size>
           </box>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <box>
-            <size>1.2 2 0.05</size>
+            <!-- 50 x 60 cm square -->
+            <size>0.5 0.6 0.01</size>
           </box>
         </geometry>
       </visual>

@@ -37,34 +37,36 @@
           <!-- 60 degrees for the oculus-m1200d at 2.1MHz mode -->
           <horizontal_fov>1.0471975512</horizontal_fov>
           <image>
-            <width>512</width>
+            <width>256</width>
             <!-- Set vertical FOV by setting image height -->
             <!-- For 12 deg. -->
-            <height>102</height>
+            <height>51</height>
             <format>R8G8B8</format>
           </image>
           <clip>
-            <near>0.1</near>            <!-- optimal 2m-60m -->
+            <near>0.01</near>            <!-- optimal 2m-60m -->
             <far>10</far>
           </clip>
           <depth_camera>
             <output>depths</output>
           </depth_camera>
-          <save enabled="true">
+          <save enabled="false">
             <path>/tmp/camera</path>
           </save>
         </camera>
         <plugin filename="libnps_multibeam_sonar_ros_plugin.so" name="forward_sonar">
           <!-- Sonar properties -->
           <sonarFreq>2100e3</sonarFreq>
-          <bandwidth>29.9e3</bandwidth>
+          <bandwidth>265.5e3</bandwidth>
           <soundSpeed>1500</soundSpeed>
-          <sourceLevel>220</sourceLevel>
-          <maxDistance>10</maxDistance>
-          <constantReflectivity>true</constantReflectivity>
+          <sourceLevel>150</sourceLevel>
+          <maxDistance>2</maxDistance>
+          <constantReflectivity>false</constantReflectivity>
+          <!-- The CSV databsefile is located at the worlds folder -->
+          <reflectivityDatabaseFile>variationalReflectivityDatabase_APL.csv</reflectivityDatabaseFile>
           <raySkips>0</raySkips>
-          <sensorGain>0.02</sensorGain>
-          <plotScaler>10</plotScaler>
+          <sensorGain>1</sensorGain>
+          <plotScaler>5</plotScaler>
           <writeLog>false</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>

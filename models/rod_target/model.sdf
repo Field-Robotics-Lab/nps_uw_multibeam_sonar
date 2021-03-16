@@ -18,7 +18,8 @@
         <geometry>
           <mesh>
             <uri>model://rod_target/meshes/rod_target.stl</uri>
-            <scale>0.00025 0.00025 0.001</scale>
+            <!-- 7 cm in diameter and about 105 cm in length -->
+            <scale>0.00007 0.00007 0.00015</scale>
           </mesh>
         </geometry>
       </collision>
@@ -26,7 +27,8 @@
         <geometry>
           <mesh>
             <uri>model://rod_target/meshes/COLLISION_rod_target.stl</uri>
-            <scale>0.00025 0.00025 0.001</scale>
+            <!-- 7 cm in diameter and about 105 cm in length -->
+            <scale>0.00007 0.00007 0.00015</scale>
           </mesh>
         </geometry>
       </visual>
