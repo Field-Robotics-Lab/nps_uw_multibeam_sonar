@@ -164,7 +164,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
         _sdf->GetElement("pointCloudTopicName")->Get<std::string>();
 
   if (!_sdf->HasElement("pointCloudCutoff"))
-    this->point_cloud_cutoff_ = 0.4;
+    this->point_cloud_cutoff_ = 0.01;
   else
     this->point_cloud_cutoff_ =
         _sdf->GetElement("pointCloudCutoff")->Get<double>();
