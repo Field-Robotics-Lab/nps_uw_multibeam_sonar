@@ -16,6 +16,7 @@ endif()
 
 find_package(catkin REQUIRED COMPONENTS
  tf
+ cv_bridge
  gazebo_plugins
  acoustic_msgs)
 
