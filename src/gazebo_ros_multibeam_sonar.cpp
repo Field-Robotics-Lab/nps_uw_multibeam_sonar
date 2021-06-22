@@ -378,6 +378,13 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
       _sdf->GetElement("debugFlag")->Get<bool>();
 
   // -- Pre calculations for sonar -- //
+  // rand number generator
+  this->rand_image = cv::Mat(this->height, this->width, CV_32FC2);
+  uint64 randN = static_cast<uint64>(std::rand());
+  cv::theRNG().state = randN;
+  cv::RNG rng = cv::theRNG();
+  rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.f);
+
   // Hamming window
   this->window = new float[this->nFreq];
   float windowSum = 0;
@@ -599,6 +606,12 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
     {
       this->calculateReflectivity = true;
       this->maxDepth_prev = this->maxDepth;
+
+      // Regenerate reand image
+      uint64 randN = static_cast<uint64>(std::rand());
+      cv::theRNG().state = randN;
+      cv::RNG rng = cv::theRNG();
+      rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.f);
     }
     else
       this->calculateReflectivity = false;
@@ -697,13 +710,6 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   double hFOV = this->parentSensor->DepthCamera()->HFOV().Radian();
   double vPixelSize = vFOV / this->height;
   double hPixelSize = hFOV / this->width;
-
-  // rand number generator
-  cv::Mat rand_image = cv::Mat(depth_image.rows, depth_image.cols, CV_32FC2);
-  uint64 randN = static_cast<uint64>(std::rand());
-  cv::theRNG().state = randN;
-  cv::RNG rng = cv::theRNG();
-  rng.fill(rand_image, cv::RNG::NORMAL, 0.f, 1.f);
 
   if (this->beamCorrectorSum == 0)
     ComputeCorrector();
