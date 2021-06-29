@@ -128,6 +128,7 @@ namespace gazebo
                                      cv::Vec3f normal);
     private: cv::Mat ComputeNormalImage(cv::Mat& depth);
     private: void ComputeCorrector();
+    private: cv::Mat rand_image;
 
     /// \brief Parameters for sonar properties
     private: double sonarFreq;
