@@ -162,7 +162,7 @@ namespace gazebo
     private: int raySkips;
     private: int ray_nAzimuthRays;
     private: int ray_nElevationRays;
-    private: int plotScaler;
+    private: float plotScaler;
     private: float sensorGain;
     protected: bool debugFlag;
 
@@ -201,6 +201,7 @@ namespace gazebo
     private: sensor_msgs::PointCloud2 point_cloud_msg_;
     private: acoustic_msgs::SonarImage sonar_image_raw_msg_;
     private: sensor_msgs::Image sonar_image_msg_;
+    private: sensor_msgs::Image sonar_image_mono_msg_;
     private: cv::Mat point_cloud_image_;
 
     std::default_random_engine generator;

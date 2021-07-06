@@ -221,7 +221,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
     this->plotScaler = 10;
   else
     this->plotScaler =
-      _sdf->GetElement("plotScaler")->Get<int>();
+      _sdf->GetElement("plotScaler")->Get<float>();
   if (!_sdf->HasElement("sensorGain"))
     this->sensorGain = 0.02;
   else
@@ -383,7 +383,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   uint64 randN = static_cast<uint64>(std::rand());
   cv::theRNG().state = randN;
   cv::RNG rng = cv::theRNG();
-  rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.f);
+  rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.0f);
 
   // Hamming window
   this->window = new float[this->nFreq];
@@ -761,6 +761,10 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                     duration.count()/10000 << "/100 [s]\n");
   }
 
+  // Gaussian noise
+  // double whiteNoise = ignition::math::Rand::DblNormal(0.0, 0.7);
+      // ROS_INFO_STREAM(Intensity[beam][f]);
+
   // CSV log write stream
   // Each cols corresponds to each beams
   if (this->writeLogFlag)
@@ -839,15 +843,13 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
     }
   }
   this->sonar_image_raw_msg_.intensities = intensities;
-
   this->sonar_image_raw_pub_.publish(this->sonar_image_raw_msg_);
-
 
   // Construct visual sonar image for rqt plot in sensor::image msg format
   cv_bridge::CvImage img_bridge;
 
-  // Generate image of 16UC1
-  cv::Mat Intensity_image = cv::Mat::zeros(cv::Size(nBeams, nFreq), CV_16UC1);
+  // Generate image of 32FC1
+  cv::Mat Intensity_image = cv::Mat::zeros(cv::Size(nBeams, nFreq), CV_32FC1);
 
   const float rangeMax = maxDistance;
   const float rangeRes = ranges[1]-ranges[0];
@@ -897,14 +899,14 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
     for ( int b = 0; b < nBeams; ++b )
     {
       const float range = ranges[r];
-      const int intensity = Intensity[b][r];
+      const int intensity = this->sensorGain * abs(P_Beams[b][r]);
       const float begin = angles[b].begin + ThetaShift,
                   end = angles[b].end + ThetaShift;
       const float rad = static_cast<float>(radius) * range/rangeMax;
       // Assume angles are in image frame x-right, y-down
       cv::ellipse(Intensity_image, origin, cv::Size(rad, rad), 0,
                   begin * 180/M_PI, end * 180/M_PI,
-                  intensity*256*this->plotScaler,
+                  intensity/2500.0*this->plotScaler,
                   binThickness);
     }
   }
@@ -917,7 +919,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   this->sonar_image_msg_.header.stamp.nsec
         = this->depth_sensor_update_time_.nsec;
   img_bridge = cv_bridge::CvImage(this->sonar_image_msg_.header,
-                                  sensor_msgs::image_encodings::MONO16,
+                                  sensor_msgs::image_encodings::TYPE_32FC1,
                                   Intensity_image);
   // from cv_bridge to sensor_msgs::Image
   img_bridge.toImageMsg(this->sonar_image_msg_);
