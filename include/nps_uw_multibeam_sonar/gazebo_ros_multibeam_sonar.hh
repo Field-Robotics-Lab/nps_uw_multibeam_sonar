@@ -150,6 +150,7 @@ namespace gazebo
     private: double maxDepth_prev;
     private: bool calculateReflectivity;
     private: cv::Mat reflectivityImage;
+
     private: float* rangeVector;
     private: float* window;
     private: float** beamCorrector;
@@ -162,9 +163,15 @@ namespace gazebo
     private: int raySkips;
     private: int ray_nAzimuthRays;
     private: int ray_nElevationRays;
+    private: std::vector<float> azimuth_angles;
+    private: std::vector<float> elevation_angles;
     private: float plotScaler;
     private: float sensorGain;
     protected: bool debugFlag;
+
+    // For ray interpolation
+    private: double rangeResolution;
+    private: std::vector<std::vector<double>> rayDistances;
 
     /// \brief CSV log writing stream for verifications
     protected: std::ofstream writeLog;

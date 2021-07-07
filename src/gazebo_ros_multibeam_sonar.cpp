@@ -320,6 +320,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   {
     this->rangeVector[i] = delta_t*i*this->soundSpeed/2.0;
   }
+  this->rangeResolution = this->soundSpeed*(1.0/(this->nFreq*delta_f));
 
   // FOV, Number of beams, number of rays are defined at model.sdf
   // Currently, this->width equals # of beams, and this->height equals # of rays
@@ -336,8 +337,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   ROS_INFO_STREAM("============   SONAR PLUGIN LOADED   =============");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("Maximum view range  [m] = " << this->maxDistance);
-  ROS_INFO_STREAM("Distance resolution [m] = " <<
-                    this->soundSpeed*(1.0/(this->nFreq*delta_f)));
+  ROS_INFO_STREAM("Distance resolution [m] = " << this->rangeResolution);
   ROS_INFO_STREAM("# of Beams = " << this->nBeams);
   ROS_INFO_STREAM("# of Rays / Beam (Elevation, Azimuth) = ("
       << ray_nElevationRays << ", " << ray_nAzimuthRays << ")");
@@ -710,6 +710,13 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   double hFOV = this->parentSensor->DepthCamera()->HFOV().Radian();
   double vPixelSize = vFOV / this->height;
   double hPixelSize = hFOV / this->width;
+  double fl = static_cast<double>(this->width) / (2.0 * tan(hFOV/2.0));
+  for (size_t beam = 0; beam < nBeams; beam ++)
+    this->azimuth_angles.push_back(atan2(static_cast<double>(beam) -
+                    0.5 * static_cast<double>(width-1), fl));
+  for (size_t ray = 0; ray < nRays; ray ++)
+    this->elevation_angles.push_back(atan2(static_cast<double>(ray) -
+                    0.5 * static_cast<double>(height-1), fl));
 
   if (this->beamCorrectorSum == 0)
     ComputeCorrector();
@@ -717,6 +724,20 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   // Default value for reflectivity
   if (this->reflectivityImage.rows == 0)
     this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
+
+  // Calculate distances between rays in the scene for interpolation
+  for ( int b = 0; b < nBeams; ++b )
+  {
+    std::vector<double> distancesOnScene;
+    for ( int r = 0; r <= (int)(nRays/raySkips); ++r )
+    {
+      float depth = depth_image.at<float>(raySkips*r, b);
+      if (depth < this->maxDistance)
+        distancesOnScene.push_back(depth_image.at<float>(raySkips*r, b));
+    }
+    std::sort(distancesOnScene.begin(), distancesOnScene.end(), std::greater<double>());
+    this->rayDistances.push_back(distancesOnScene);
+  }
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
@@ -760,6 +781,87 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
     ROS_INFO_STREAM("GPU Sonar Frame Calc Time " <<
                     duration.count()/10000 << "/100 [s]\n");
   }
+
+  // P_Beams_abs = abs(P_beams)
+  Array2D P_Beams_abs(Array(nFreq), nBeams);
+  for ( int b = 0; b < nBeams; ++b )
+    for ( int r = 0; r < nFreq; ++r )
+      P_Beams_abs[b][r] = abs(P_Beams[b][r]);
+
+  // // Interpolation between rays
+  // Array2D P_Beams_abs_interp = P_Beams_abs;
+  // const double threshold = this->rangeResolution/5;
+  // for ( int b = 0; b < nBeams; ++b )
+  // {
+  //   for ( int ray = 1; ray < this->rayDistances[b].size(); ++ray )
+  //   {
+  //     // Catch close/far distance and values for interpolation
+  //     int farIndex = 0; int closeIndex = 0;
+  //     double farDist = this->rayDistances[b][ray-1];
+  //     double closeDist = this->rayDistances[b][ray];
+  //     double farValue = 0.0; double closeValue = 0.0;
+  //     for ( int r = 0; r < nFreq; ++r )
+  //     {
+  //       if (abs(rangeVector[r]-farDist) < threshold)
+  //       {
+  //         farValue = P_Beams_abs[b][r];
+  //         farIndex = r;
+  //       }
+  //       if (abs(rangeVector[r]-closeDist) < threshold)
+  //       {
+  //         closeValue = P_Beams_abs[b][r];
+  //         closeIndex = r;
+  //       }
+  //     }
+  //     // Interpolate
+  //     if (farIndex != 0 && closeIndex != 0)
+  //       for ( int r = closeIndex + 2; r < farIndex - 1; ++r )
+  //         P_Beams_abs_interp[b][r] = closeValue + (farValue-closeValue)*(rangeVector[r]-closeDist)/(farDist - closeDist);
+  //   }
+  // }
+
+  // Interpolation between rays
+  CArray2D P_Beams_interp = P_Beams;
+  const double threshold = this->rangeResolution/5;
+  for ( int b = 0; b < nBeams; ++b )
+  {
+    for ( int ray = 1; ray < this->rayDistances[b].size(); ++ray )
+    {
+      // Catch close/far distance and values for interpolation
+      int farIndex = 0; int closeIndex = 0;
+      double farDist = this->rayDistances[b][ray-1];
+      double closeDist = this->rayDistances[b][ray];
+      Complex farValue = 0.0; Complex closeValue = 0.0;
+      for ( int r = 0; r < nFreq; ++r )
+      {
+        if (abs(rangeVector[r]-farDist) < threshold)
+        {
+          farValue = P_Beams[b][r];
+          farIndex = r;
+        }
+        if (abs(rangeVector[r]-closeDist) < threshold)
+        {
+          closeValue = P_Beams[b][r];
+          closeIndex = r;
+        }
+      }
+      // Interpolate
+      if (farIndex != 0 && closeIndex != 0)
+        for ( int r = closeIndex - 1; r < farIndex + 1; ++r )
+          P_Beams_interp[b][r] = Complex (
+            closeValue.real() + (farValue.real()-closeValue.real())*(rangeVector[r]-closeDist)/(farDist - closeDist),
+            closeValue.imag() + (farValue.imag()-closeValue.imag())*(rangeVector[r]-closeDist)/(farDist - closeDist));
+    }
+  }
+
+  P_Beams = P_Beams_interp;
+
+  // P_Beams_abs_interp = abs(P_beams_interp)
+  Array2D P_Beams_abs_interp(Array(nFreq), nBeams);
+  for ( int b = 0; b < nBeams; ++b )
+    for ( int r = 0; r < nFreq; ++r )
+      P_Beams_abs_interp[b][r] = abs(P_Beams_interp[b][r]);
+
 
   // Gaussian noise
   // double whiteNoise = ignition::math::Rand::DblNormal(0.0, 0.7);
@@ -815,12 +917,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   this->sonar_image_raw_msg_.sound_speed = this->soundSpeed;
   this->sonar_image_raw_msg_.azimuth_beamwidth = hPixelSize;
   this->sonar_image_raw_msg_.elevation_beamwidth = hPixelSize*this->nRays;
-  std::vector<float> azimuth_angles;
-  double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
-  for (size_t beam = 0; beam < nBeams; beam ++)
-    azimuth_angles.push_back(atan2(static_cast<double>(beam) -
-                    0.5 * static_cast<double>(width-1), fl));
-  this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
+  this->sonar_image_raw_msg_.azimuth_angles = this->azimuth_angles;
   // std::vector<float> elevation_angles;
   // elevation_angles.push_back(vFOV / 2.0);  // 1D in elevation
   // this->sonar_image_raw_msg_.elevation_angles = elevation_angles;
@@ -837,7 +934,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   {
     for (size_t beam = 0; beam < nBeams; beam ++)
     {
-      Intensity[beam][f] = static_cast<int>(this->sensorGain * abs(P_Beams[beam][f]));
+      Intensity[beam][f] = static_cast<int>(this->sensorGain * P_Beams_abs[beam][f]);
       uchar counts = static_cast<uchar>(std::min(UCHAR_MAX, Intensity[beam][f]));
       intensities.push_back(counts);
     }
@@ -899,7 +996,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
     for ( int b = 0; b < nBeams; ++b )
     {
       const float range = ranges[r];
-      const int intensity = this->sensorGain * abs(P_Beams[b][r]);
+      const int intensity = this->sensorGain * P_Beams_abs_interp[b][r];
       const float begin = angles[b].begin + ThetaShift,
                   end = angles[b].end + ThetaShift;
       const float rad = static_cast<float>(radius) * range/rangeMax;
