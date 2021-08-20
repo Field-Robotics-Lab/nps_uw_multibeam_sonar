@@ -65,6 +65,19 @@ target_link_libraries(nps_multibeam_sonar_ros_plugin
 add_dependencies(nps_multibeam_sonar_ros_plugin ${catkin_EXPORTED_TARGETS})
 list(APPEND SENSOR_ROS_PLUGINS_LIST nps_multibeam_sonar_ros_plugin)
 
+add_library(nps_multibeam_sonar_ray_ros_plugin
+            src/multibeam_sonar_ray_based.cpp
+  )
+set_target_properties(nps_multibeam_sonar_ray_ros_plugin
+                      PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(nps_multibeam_sonar_ray_ros_plugin
+                      ${OGRE_LIBRARIES} ${catkin_LIBRARIES}
+                      ${CUDA_LIBRARIES}
+                      ${CUDA_CUFFT_LIBRARIES})
+add_dependencies(nps_multibeam_sonar_ray_ros_plugin ${catkin_EXPORTED_TARGETS})
+list(APPEND SENSOR_ROS_PLUGINS_LIST nps_multibeam_sonar_ray_ros_plugin)
+
+
 # Install plugins
 install(
   TARGETS ${SENSOR_ROS_PLUGINS_LIST}
