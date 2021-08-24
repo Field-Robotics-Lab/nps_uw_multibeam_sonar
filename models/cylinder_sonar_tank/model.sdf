@@ -18,8 +18,8 @@
         <geometry>
           <mesh>
             <uri>model://cylinder_sonar_tank/meshes/cylinder_sonar_tank.stl</uri>
-            <!-- inner diameter of 73". The water is ~48" deep -->
-            <scale>0.9271 0.9271 0.6096</scale>
+            <!-- inner diameter of 92". The water is ~48" deep -->
+            <scale>1.1684 1.1684 0.6096</scale>
           </mesh>
         </geometry>
       </collision>
@@ -27,8 +27,8 @@
         <geometry>
           <mesh>
             <uri>model://cylinder_sonar_tank/meshes/COLLISION_cylinder_sonar_tank.stl</uri>
-            <!-- inner diameter of 73". The water is ~48" deep -->
-            <scale>0.9271 0.9271 0.6096</scale>
+            <!-- inner diameter of 92". The water is ~48" deep -->
+            <scale>1.1684 1.1684 0.6096</scale>
           </mesh>
         </geometry>
       </visual>

@@ -31,26 +31,30 @@
     </include> -->
 
     <!-- horizontal cylinder target -->
-    <include>
+    <!-- <include>
       <uri>model://rod_target</uri>
       <name>rod_target</name>
       <pose>-0.525 0 0.6 0 1.5709 0</pose>
       <static>true</static>
-    </include>
+    </include> -->
 
     <!-- plate target -->
-    <!-- <include>
+    <include>
       <uri>model://plate_target</uri>
       <name>plate_target</name>
-      <pose>0 0 0.6 1.5709 0 0</pose>
+      <!-- Assume that the plate is at the same z position as the sonar -->
+      <!-- sonar is at 12" below water surface -->
+      <pose>0 0 0.9144 1.5709 0 0</pose>
       <static>true</static>
-    </include> -->
+    </include>
 
     <!-- Oculus m1200d -->
     <include>
       <uri>model://oculus_m1200d_nps_multibeam</uri>
       <name>oculus_m1200d</name>
-      <pose>0 -0.50 0.6 0 0 1.5709</pose>
+      <!-- Sonar placed at 12" below water surface, 20" from the sonar tank wall -->
+      <!-- zero roll and pitch -->
+      <pose>0 -0.6604 0.9144 0 0 1.5709</pose>
       <static>true</static>
     </include>
 
