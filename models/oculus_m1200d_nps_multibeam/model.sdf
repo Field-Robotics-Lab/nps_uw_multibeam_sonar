@@ -27,6 +27,12 @@
             <uri>model://oculus_m1200d_nps_multibeam/meshes/p900.dae</uri>
           </mesh>
         </geometry>
+        <material> <!-- bright material -->
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+          <specular>0 0 0 0</specular>
+          <emissive>0.2 0.2 1.0 1</emissive>
+        </material>
       </visual>
 
       <sensor name="image_sonar" type="depth">
@@ -64,10 +70,10 @@
           <constantReflectivity>false</constantReflectivity>
           <!-- The CSV databsefile is located at the worlds folder -->
           <reflectivityDatabaseFile>variationalReflectivityDatabase_APL.csv</reflectivityDatabaseFile>
-          <raySkips>0</raySkips>
+          <raySkips>10</raySkips>
           <sensorGain>1</sensorGain>
           <plotScaler>5</plotScaler>
-          <writeLog>false</writeLog>
+          <writeLog>true</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
           <!-- This name is prepended to ROS topics -->
