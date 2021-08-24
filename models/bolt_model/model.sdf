@@ -2,8 +2,9 @@
 <sdf version="1.6">
   <model name="bolt_model">
     <link name="link">
+      <!-- <pose>0 0 0 0 0 0</pose> -->
+      <pose>-0.230 0.0 0.280 3.141592 0 0</pose>
       <inertial>
-        <pose>0 0 0 0 0 0</pose>
         <mass>1000.0</mass>
         <inertia>
           <ixx>0.083</ixx>
@@ -18,7 +19,9 @@
         <geometry>
           <mesh>
             <!-- <uri>model://bolt_model/meshes/COLLISION_bolt_model.stl</uri> -->
-            <uri>model://bolt_model/meshes/COLLISION_bolt_model_coarse.stl</uri>
+            <!-- <uri>model://bolt_model/meshes/COLLISION_bolt_model_coarse.stl</uri> -->
+            <!-- <uri>model://bolt_model/meshes/bolt_simplified.stl</uri> -->
+            <uri>model://bolt_model/meshes/bolt_simplified_large.stl</uri>
             <!-- On 600 mm x 450 mm plate-->
             <scale>0.001 0.001 0.001</scale>
           </mesh>
@@ -28,7 +31,9 @@
         <geometry>
           <mesh>
             <!-- <uri>model://bolt_model/meshes/bolt_model.stl</uri> -->
-            <uri>model://bolt_model/meshes/bolt_model_coarse.stl</uri>
+            <!-- <uri>model://bolt_model/meshes/bolt_model_coarse.stl</uri> -->
+            <!-- <uri>model://bolt_model/meshes/bolt_simplified.stl</uri> -->
+            <uri>model://bolt_model/meshes/bolt_simplified_large.stl</uri>
             <!-- On 600 mm x 450 mm plate -->
             <scale>0.001 0.001 0.001</scale>
           </mesh>

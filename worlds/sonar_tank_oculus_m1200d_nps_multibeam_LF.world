@@ -55,13 +55,14 @@
     <include>
       <uri>model://plate_model</uri>
       <name>plate_model</name>
-      <pose>-0.3 0.0 1.1394 2.35619 0 0</pose>
+      <pose>0 0 0.9144 0 0 0</pose>
       <static>true</static>
     </include>
+
     <include>
       <uri>model://bolt_model</uri>
       <name>bolt_model</name>
-      <pose>-0.285 0.0 1.1394 2.35619 0 0</pose>
+      <pose>0 0 0.9144 0 0 0</pose>
       <static>true</static>
     </include>
 

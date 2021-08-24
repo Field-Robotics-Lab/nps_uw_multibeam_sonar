@@ -2,8 +2,9 @@
 <sdf version="1.6">
   <model name="plate_model">
     <link name="link">
+      <!-- <pose>0 0 0 0 0 0</pose> -->
+      <pose>-0.3 0.0 -0.225 0.0 0 0</pose>
       <inertial>
-        <pose>0 0 0 0 0 0</pose>
         <mass>1000.0</mass>
         <inertia>
           <ixx>0.083</ixx>
@@ -17,7 +18,8 @@
       <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://plate_model/meshes/COLLISION_plate_model.stl</uri>
+            <!-- <uri>model://plate_model/meshes/COLLISION_plate_model.stl</uri> -->
+            <uri>model://plate_model/meshes/plate_model_noholes.stl</uri>
             <!-- 600 mm x 450 mm -->
             <scale>0.001 0.001 0.001</scale>
           </mesh>
@@ -26,7 +28,8 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://plate_model/meshes/plate_model.stl</uri>
+            <!-- <uri>model://plate_model/meshes/plate_model.stl</uri> -->
+            <uri>model://plate_model/meshes/plate_model_noholes.stl</uri>
             <!-- 600 mm x 450 mm -->
             <scale>0.001 0.001 0.001</scale>
           </mesh>
