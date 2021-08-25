@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <gui>
+      <camera name='user_camera'>
+        <pose>2.52 -2.65 3.73 0 0.66 2.42</pose>
+      </camera>
+    </gui>
+
+    <!-- basement tank -->
+    <include>
+      <uri>model://cylinder_sonar_tank</uri>
+      <name>cylinder_sonar_tank</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- vertical cylinder target -->
+    <!-- <include>
+      <uri>model://rod_target</uri>
+      <name>rod_target</name>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include> -->
+
+    <!-- horizontal cylinder target -->
+    <!-- <include>
+      <uri>model://rod_target</uri>
+      <name>rod_target</name>
+      <pose>-0.525 0 0.6 0 1.5709 0</pose>
+      <static>true</static>
+    </include> -->
+
+    <!-- simple plate target -->
+    <!-- Assume that the plate is at the same z position as the sonar -->
+    <!-- sonar is at 12" below water surface -->
+    <!-- <include>
+      <uri>model://plate_target</uri>
+      <name>plate_target</name>
+      <pose>0 0 0.9144 1.5709 0 0</pose>
+      <static>true</static>
+    </include> -->
+
+    <!-- plate model (designed using SolidWorks) -->
+    <!-- Plate size : 600 mm x 450 mm, origin at left bottom corner-->
+    <!-- Assume that the plate is at the same z position as the sonar -->
+    <!-- sonar is at 12" below water surface where the water is ~48" deep -->
+    <include>
+      <uri>model://plate_model</uri>
+      <name>plate_model</name>
+      <pose>-0.3 0.0 1.1394 2.35619 0 0</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>model://bolt_model</uri>
+      <name>bolt_model</name>
+      <pose>-0.285 0.0 1.1394 2.35619 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- Oculus m1200d -->
+    <include>
+      <uri>model://oculus_m1200d_nps_multibeam_HF</uri>
+      <name>oculus_m1200d</name>
+      <!-- Sonar placed at 12" below water surface, 20" from the sonar tank wall -->
+      <!-- zero roll and pitch, the water is ~48" deep -->
+      <pose>0 -0.6604 0.9144 0 0 1.5709</pose>
+      <static>true</static>
+    </include>
+
+  </world>
+</sdf>
+

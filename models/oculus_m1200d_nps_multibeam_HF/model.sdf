@@ -17,14 +17,14 @@
       <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://oculus_m1200d_nps_multibeam/meshes/COLLISION-p900.dae</uri>
+            <uri>model://oculus_m1200d_nps_multibeam_HF/meshes/COLLISION-p900.dae</uri>
           </mesh>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://oculus_m1200d_nps_multibeam/meshes/p900.dae</uri>
+            <uri>model://oculus_m1200d_nps_multibeam_HF/meshes/p900.dae</uri>
           </mesh>
         </geometry>
         <material> <!-- bright material -->
@@ -43,10 +43,10 @@
           <!-- 60 degrees for the oculus-m1200d at 2.1MHz mode -->
           <horizontal_fov>1.0471975512</horizontal_fov>
           <image>
-            <width>256</width>
+            <width>512</width>
             <!-- Set vertical FOV by setting image height -->
             <!-- For 12 deg. -->
-            <height>51</height>
+            <height>102</height>
             <format>R8G8B8</format>
           </image>
           <clip>
@@ -70,7 +70,7 @@
           <constantReflectivity>false</constantReflectivity>
           <!-- The CSV databsefile is located at the worlds folder -->
           <reflectivityDatabaseFile>variationalReflectivityDatabase_APL.csv</reflectivityDatabaseFile>
-          <raySkips>10</raySkips>
+          <raySkips>1</raySkips>
           <sensorGain>1</sensorGain>
           <plotScaler>5</plotScaler>
           <writeLog>true</writeLog>

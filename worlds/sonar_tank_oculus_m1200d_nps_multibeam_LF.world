@@ -67,7 +67,7 @@
 
     <!-- Oculus m1200d -->
     <include>
-      <uri>model://oculus_m1200d_nps_multibeam</uri>
+      <uri>model://oculus_m1200d_nps_multibeam_LF</uri>
       <name>oculus_m1200d</name>
       <!-- Sonar placed at 12" below water surface, 20" from the sonar tank wall -->
       <!-- zero roll and pitch, the water is ~48" deep -->
