@@ -2,8 +2,8 @@
 <sdf version="1.6">
   <model name="plate_target">
     <link name="link">
+      <pose>0 0 0 0 0 0</pose>
       <inertial>
-        <pose>0 0 0 0 0 0</pose>
         <mass>10.0</mass>
         <inertia>
           <ixx>0.083</ixx>
@@ -17,18 +17,24 @@
       <collision name="collision">
         <geometry>
           <box>
-            <!-- 45 x 45 cm square -->
-            <size>0.45 0.45 0.01</size>
+            <!-- 600 mm x 450 mm -->
+            <size>0.60 0.01 0.45</size>
           </box>
         </geometry>
       </collision>
       <visual name="visual">
         <geometry>
           <box>
-            <!-- 45 x 45 cm square -->
-            <size>0.45 0.45 0.01</size>
+            <!-- 600 mm x 450 mm -->
+            <size>0.60 0.01 0.45</size>
           </box>
         </geometry>
+        <material> <!-- dark material -->
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+          <specular>0 0 0 0</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
       </visual>
     </link>
   </model>

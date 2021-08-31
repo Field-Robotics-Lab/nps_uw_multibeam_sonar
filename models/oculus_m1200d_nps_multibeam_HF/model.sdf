@@ -67,10 +67,10 @@
           <soundSpeed>1500</soundSpeed>
           <sourceLevel>150</sourceLevel>
           <maxDistance>2</maxDistance>
-          <constantReflectivity>false</constantReflectivity>
+          <constantReflectivity>true</constantReflectivity>
           <!-- The CSV databsefile is located at the worlds folder -->
           <reflectivityDatabaseFile>variationalReflectivityDatabase_APL.csv</reflectivityDatabaseFile>
-          <raySkips>1</raySkips>
+          <!-- <raySkips>1</raySkips> -->
           <sensorGain>1</sensorGain>
           <plotScaler>5</plotScaler>
           <writeLog>true</writeLog>

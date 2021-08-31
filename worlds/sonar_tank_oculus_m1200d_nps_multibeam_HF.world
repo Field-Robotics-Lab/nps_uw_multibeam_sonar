@@ -53,25 +53,25 @@
     <!-- Assume that the plate is at the same z position as the sonar -->
     <!-- sonar is at 12" below water surface where the water is ~48" deep -->
     <include>
-      <uri>model://plate_model</uri>
+      <uri>model://plate_target</uri>
       <name>plate_model</name>
       <pose>0 0 0.9144 0 0 0</pose>
       <static>true</static>
     </include>
 
     <include>
-      <uri>model://bolt_model</uri>
+      <uri>model://bolt_target</uri>
       <name>bolt_model</name>
       <pose>0 0 0.9144 0 0 0</pose>
       <static>true</static>
     </include>
 
     <!-- Oculus m1200d -->
+    <!-- Sonar placed at 12" below water surface, 20" from the sonar tank wall -->
+    <!-- zero roll and pitch, the water is ~48" deep -->
     <include>
       <uri>model://oculus_m1200d_nps_multibeam_HF</uri>
       <name>oculus_m1200d</name>
-      <!-- Sonar placed at 12" below water surface, 20" from the sonar tank wall -->
-      <!-- zero roll and pitch, the water is ~48" deep -->
       <pose>0 -0.6604 0.9144 0 0 1.5709</pose>
       <static>true</static>
     </include>
