@@ -18,8 +18,8 @@
       <collision name="collision">
         <geometry>
           <mesh>
-            <!-- <uri>model://plate_model/meshes/COLLISION_plate_model.stl</uri> -->
-            <uri>model://plate_model/meshes/plate_model_noholes.stl</uri>
+            <uri>model://plate_model/meshes/COLLISION_plate_model.stl</uri>
+            <!-- <uri>model://plate_model/meshes/plate_model_noholes.stl</uri> -->
             <!-- 600 mm x 450 mm -->
             <scale>0.001 0.001 0.001</scale>
           </mesh>
@@ -28,8 +28,8 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <!-- <uri>model://plate_model/meshes/plate_model.stl</uri> -->
-            <uri>model://plate_model/meshes/plate_model_noholes.stl</uri>
+            <uri>model://plate_model/meshes/plate_model.stl</uri>
+            <!-- <uri>model://plate_model/meshes/plate_model_noholes.stl</uri> -->
             <!-- 600 mm x 450 mm -->
             <scale>0.001 0.001 0.001</scale>
           </mesh>

@@ -52,16 +52,30 @@
     <!-- Plate size : 600 mm x 450 mm, origin at left bottom corner-->
     <!-- Assume that the plate is at the same z position as the sonar -->
     <!-- sonar is at 12" below water surface where the water is ~48" deep -->
-    <include>
+    <!-- <include>
+      <uri>model://plate_model</uri>
+      <name>plate_model</name>
+      <pose>0 0 0.9144 0 0 0</pose>
+      <static>true</static>
+    </include> -->
+
+    <!-- <include>
       <uri>model://plate_target</uri>
       <name>plate_model</name>
       <pose>0 0 0.9144 0 0 0</pose>
       <static>true</static>
-    </include>
+    </include> -->
 
-    <include>
+    <!-- <include>
       <uri>model://bolt_target</uri>
       <name>bolt_model</name>
+      <pose>0 0 0.9144 0 0 0</pose>
+      <static>true</static>
+    </include> -->
+
+    <include>
+      <uri>model://plate_holes</uri>
+      <name>plate_model</name>
       <pose>0 0 0.9144 0 0 0</pose>
       <static>true</static>
     </include>

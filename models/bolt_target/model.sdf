@@ -5,121 +5,142 @@
     <link name="A1">
       <pose>-0.18 0 0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>
+      <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="A2">
       <pose>-0.09 0 0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="A3">
       <pose>-0.225 0 0.1125 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="A4">
       <pose>-0.135 0 0.1125 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="A5">
       <pose>-0.18 0 0.0675 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="B1">
       <pose>0.09 0 0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="B2">
       <pose>0.18 0 0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="B3">
       <pose>0.135 0 0.1125 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="B4">
       <pose>0.225 0 0.1125 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="B5">
       <pose>0.18 0 0.0675 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="C1">
       <pose>-0.225 0 -0.0675 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="C2">
       <pose>-0.135 0 -0.0675 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="C3">
       <pose>-0.18 0 -0.1125 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="C4">
       <pose>-0.225 0 -0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="C5">
       <pose>-0.135 0 -0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="D1">
       <pose>0.135 0 -0.0675 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="D2">
       <pose>0.225 0 -0.0675 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="D3">
       <pose>0.18 0 -0.1125 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="D4">
       <pose>0.135 0 -0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
     <link name="D5">
       <pose>0.225 0 -0.1575 0 0 0</pose>
       <collision name="collision"><geometry><sphere><radius>0.01</radius></sphere></geometry></collision>
-      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry></visual>
+      <visual name="visual"><geometry><sphere><radius>0.01</radius></sphere></geometry>  <material><ambient>0 0 0 1</ambient><diffuse>0 0 0 1</diffuse><specular>0 0 0 0</specular><emissive>1.0 0.2 0.2 1</emissive></material>
+      </visual>
     </link>
 
   </model>
