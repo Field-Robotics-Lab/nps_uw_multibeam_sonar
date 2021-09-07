@@ -39,8 +39,8 @@
           <image>
             <width>512</width>
             <!-- Set vertical FOV by setting image height -->
-            <!-- For 20 deg. -->
-            <height>114</height>
+            <!-- Approx 2 times the spec sheet (sepc: 20 deg.) -->
+            <height>228</height>
             <format>R8G8B8</format>
           </image>
           <clip>
@@ -56,6 +56,7 @@
         </camera>
         <plugin filename="libnps_multibeam_sonar_ros_plugin.so" name="forward_sonar">
           <!-- Sonar properties -->
+          <verticalFOV>20</verticalFOV>
           <sonarFreq>900e3</sonarFreq>
           <bandwidth>29.9e3</bandwidth>
           <soundSpeed>1500</soundSpeed>

@@ -25,7 +25,7 @@
     <include>
       <uri>model://cylinder_target</uri>
       <name>cylinder_target1</name>
-      <pose>2.8 5.0 1.0 0 0 0</pose>
+      <pose>2.8 5.0 2.0 0 0 0</pose>
       <static>true</static>
     </include>
 
@@ -33,7 +33,7 @@
     <include>
       <uri>model://cylinder_target</uri>
       <name>cylinder_target2</name>
-      <pose>1.5 5.0 1.0 0 1.5709 0</pose>
+      <pose>1.5 5.0 2.0 0 1.5709 0</pose>
       <static>true</static>
     </include>
 
@@ -41,7 +41,7 @@
     <include>
       <uri>model://blueview_p900_nps_multibeam</uri>
       <name>blueview_p900</name>
-      <pose>2.1 1.0 1.2 0 0 1.5709</pose>
+      <pose>2.1 1.0 2.0 0 0 1.5709</pose>
       <static>true</static>
     </include>
 
