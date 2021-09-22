@@ -51,7 +51,7 @@
           </image>
           <clip>
             <near>0.01</near>            <!-- optimal 2m-60m -->
-            <far>10</far>
+            <far>20</far>
           </clip>
           <depth_camera>
             <output>depths</output>
@@ -65,14 +65,14 @@
           <sonarFreq>2100e3</sonarFreq>
           <bandwidth>265.5e3</bandwidth>
           <soundSpeed>1500</soundSpeed>
-          <sourceLevel>150</sourceLevel>
+          <sourceLevel>170</sourceLevel>
           <maxDistance>2</maxDistance>
-          <constantReflectivity>true</constantReflectivity>
+          <constantReflectivity>false</constantReflectivity>
           <!-- The CSV databsefile is located at the worlds folder -->
           <reflectivityDatabaseFile>variationalReflectivityDatabase_APL.csv</reflectivityDatabaseFile>
           <!-- <raySkips>1</raySkips> -->
-          <sensorGain>1</sensorGain>
-          <plotScaler>5</plotScaler>
+          <sensorGain>0.2</sensorGain>
+          <plotScaler>2.5</plotScaler>
           <writeLog>true</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>

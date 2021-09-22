@@ -1,6 +1,7 @@
 ﻿# Information
 Information about this data can be written here (in one line without comma)
 # ObjectName, reflectivity (ObjecName may not be equal to that of the model name in the world file. Double check at world tab on the the left of gazebo window, defualt 0.001)
-cylinder_sonar_tank,0.001
+cylinder_sonar_tank,2.0
 bolt_model,0.1
 plate_model,0.0001
+uw_apl_rod,0.1

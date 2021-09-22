@@ -833,11 +833,15 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   this->sonar_image_raw_msg_.data_size = 1;  // sizeof(float) * nFreq * nBeams;
   std::vector<uchar> intensities;
   int Intensity[nBeams][nFreq];
+  float minIntensity = 1E5;
+  for (size_t f = 0; f < nFreq; f ++)
+    for (size_t beam = 0; beam < nBeams; beam ++)
+        minIntensity = std::min(abs(P_Beams[beam][f]*this->sensorGain), minIntensity);
   for (size_t f = 0; f < nFreq; f ++)
   {
     for (size_t beam = 0; beam < nBeams; beam ++)
     {
-      Intensity[beam][f] = static_cast<int>(this->sensorGain * abs(P_Beams[beam][f]));
+      Intensity[beam][f] = static_cast<int>(20*log10(abs(P_Beams[beam][f]*this->sensorGain) - minIntensity + 1));
       uchar counts = static_cast<uchar>(std::min(UCHAR_MAX, Intensity[beam][f]));
       intensities.push_back(counts);
     }
@@ -899,7 +903,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
     for ( int b = 0; b < nBeams; ++b )
     {
       const float range = ranges[r];
-      const int intensity = this->sensorGain * abs(P_Beams[b][r]);
+      const int intensity = 20*log10(abs(P_Beams[b][r]*this->sensorGain) - minIntensity + 1);
       const float begin = angles[b].begin + ThetaShift,
                   end = angles[b].end + ThetaShift;
       const float rad = static_cast<float>(radius) * range/rangeMax;
