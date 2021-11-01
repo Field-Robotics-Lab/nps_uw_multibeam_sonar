@@ -505,7 +505,7 @@ namespace NpsGazeboSonar
     // -------------- Beam culling correction -----------------//
     // beamCorrector and beamCorrectorSum is precalculated at parent cpp
     float *P_Beams_Cor_real, *P_Beams_Cor_imag;
-    // float *P_Beams_Cor_F_real, *P_Beams_Cor_F_imag;
+    float *P_Beams_Cor_F_real, *P_Beams_Cor_F_imag;
     float *P_Beams_Cor_real_tmp, *P_Beams_Cor_imag_tmp;
     float *d_P_Beams_Cor_real, *d_P_Beams_Cor_imag;
     float *d_P_Beams_Cor_F_real, *d_P_Beams_Cor_F_imag;
@@ -515,8 +515,8 @@ namespace NpsGazeboSonar
     cudaMallocHost((void **)&P_Beams_Cor_imag, P_Beams_Cor_Bytes);
     cudaMallocHost((void **)&P_Beams_Cor_real_tmp, P_Beams_Cor_Bytes);
     cudaMallocHost((void **)&P_Beams_Cor_imag_tmp, P_Beams_Cor_Bytes);
-    // cudaMallocHost((void **)&P_Beams_Cor_F_real, P_Beams_Cor_Bytes);
-    // cudaMallocHost((void **)&P_Beams_Cor_F_imag, P_Beams_Cor_Bytes);
+    cudaMallocHost((void **)&P_Beams_Cor_F_real, P_Beams_Cor_Bytes);
+    cudaMallocHost((void **)&P_Beams_Cor_F_imag, P_Beams_Cor_Bytes);
     SAFE_CALL(cudaMalloc((void **)&d_P_Beams_Cor_real, P_Beams_Cor_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_P_Beams_Cor_imag, P_Beams_Cor_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_P_Beams_Cor_F_real, P_Beams_Cor_Bytes), "CUDA Malloc Failed");
@@ -572,66 +572,66 @@ namespace NpsGazeboSonar
     SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
 
     // ---------------    Windowing   ----------------- //
-    // float *window_diag, *d_window;
-    // const int window_N = nFreq * 1;
-    // const int window_Bytes = sizeof(float) * window_N;
-    // window_diag = (float *)malloc(window_Bytes);
-    // SAFE_CALL(cudaMalloc((void **)&d_window, window_Bytes), "CUDA Malloc Failed");
+    float *window_diag, *d_window;
+    const int window_N = nFreq * 1;
+    const int window_Bytes = sizeof(float) * window_N;
+    window_diag = (float *)malloc(window_Bytes);
+    SAFE_CALL(cudaMalloc((void **)&d_window, window_Bytes), "CUDA Malloc Failed");
 
-    // int *diag_ptr, *d_diag_ptr;
-    // const int diag_ptr_N = nBeams * 1;
-    // const int diag_ptr_Bytes = sizeof(int) * diag_ptr_N;
-    // diag_ptr = (int *)malloc(diag_ptr_Bytes);
-    // SAFE_CALL(cudaMalloc((void **)&d_diag_ptr, diag_ptr_Bytes), "CUDA Malloc Failed");
+    int *diag_ptr, *d_diag_ptr;
+    const int diag_ptr_N = nBeams * 1;
+    const int diag_ptr_Bytes = sizeof(int) * diag_ptr_N;
+    diag_ptr = (int *)malloc(diag_ptr_Bytes);
+    SAFE_CALL(cudaMalloc((void **)&d_diag_ptr, diag_ptr_Bytes), "CUDA Malloc Failed");
 
-    // // (nBeams x nfreq) * (1 x nFreq) = (nBeams x nFreq)
-    // for (size_t beam = 0; beam < nBeams; beam ++)
-    // {
-    //   for (size_t f = 0; f < nFreq; f++)
-    //   { // Transpose
-    //     P_Beams_Cor_real[beam * nFreq + f] = P_Beams_Cor_real_tmp[f * nBeams + beam];
-    //     P_Beams_Cor_imag[beam * nFreq + f] = P_Beams_Cor_imag_tmp[f * nBeams + beam];
-    //     window_diag[f] = window[f];
-    //   }
-    //   diag_ptr[beam] = (int)beam;
-    // }
-    // SAFE_CALL(cudaMemcpy(d_P_Beams_Cor_real, P_Beams_Cor_real, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(d_P_Beams_Cor_imag, P_Beams_Cor_imag, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(d_window, window_diag, window_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(d_diag_ptr, diag_ptr, diag_ptr_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
+    // (nBeams x nfreq) * (1 x nFreq) = (nBeams x nFreq)
+    for (size_t beam = 0; beam < nBeams; beam ++)
+    {
+      for (size_t f = 0; f < nFreq; f++)
+      { // Transpose
+        P_Beams_Cor_real[beam * nFreq + f] = P_Beams_Cor_real_tmp[f * nBeams + beam];
+        P_Beams_Cor_imag[beam * nFreq + f] = P_Beams_Cor_imag_tmp[f * nBeams + beam];
+        window_diag[f] = window[f];
+      }
+      diag_ptr[beam] = (int)beam;
+    }
+    SAFE_CALL(cudaMemcpy(d_P_Beams_Cor_real, P_Beams_Cor_real, P_Beams_Cor_Bytes,
+                         cudaMemcpyHostToDevice),
+              "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_P_Beams_Cor_imag, P_Beams_Cor_imag, P_Beams_Cor_Bytes,
+                         cudaMemcpyHostToDevice),
+              "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_window, window_diag, window_Bytes,
+                         cudaMemcpyHostToDevice),
+              "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_diag_ptr, diag_ptr, diag_ptr_Bytes,
+                         cudaMemcpyHostToDevice),
+              "CUDA Memcpy Failed");
 
-    // grid_rows = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    // grid_cols = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    // dim3 dimGrid_window(grid_cols, grid_rows);
-    // gpu_diag_matrix_mult<<<dimGrid_window, dimBlock>>>(d_P_Beams_Cor_real, d_diag_ptr, d_window, nFreq);
-    // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
+    grid_rows = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    grid_cols = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    dim3 dimGrid_window(grid_cols, grid_rows);
+    gpu_diag_matrix_mult<<<dimGrid_window, dimBlock>>>(d_P_Beams_Cor_real, d_diag_ptr, d_window, nFreq);
+    SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
 
-    // gpu_diag_matrix_mult<<<dimGrid_window, dimBlock>>>(d_P_Beams_Cor_imag, d_diag_ptr, d_window, nFreq);
-    // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
+    gpu_diag_matrix_mult<<<dimGrid_window, dimBlock>>>(d_P_Beams_Cor_imag, d_diag_ptr, d_window, nFreq);
+    SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
 
-    // //Copy back data from destination device meory
-    // SAFE_CALL(cudaMemcpy(P_Beams_Cor_F_real, d_P_Beams_Cor_real, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyDeviceToHost),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(P_Beams_Cor_F_imag, d_P_Beams_Cor_imag, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyDeviceToHost),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
+    //Copy back data from destination device meory
+    SAFE_CALL(cudaMemcpy(P_Beams_Cor_F_real, d_P_Beams_Cor_real, P_Beams_Cor_Bytes,
+                         cudaMemcpyDeviceToHost),
+              "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(P_Beams_Cor_F_imag, d_P_Beams_Cor_imag, P_Beams_Cor_Bytes,
+                         cudaMemcpyDeviceToHost),
+              "CUDA Memcpy Failed");
+    SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
 
     // Return
     for (size_t beam = 0; beam < nBeams; beam ++)
       for (size_t f = 0; f < nFreq; f++)
         P_Beams_F[beam][f] =
-            Complex(P_Beams_Cor_real_tmp[f * nBeams + beam] / beamCorrectorSum,
-                    P_Beams_Cor_imag_tmp[f * nBeams + beam] / beamCorrectorSum);
+            Complex(P_Beams_Cor_F_real[beam * nFreq + f] / beamCorrectorSum,
+              P_Beams_Cor_F_imag[beam * nFreq + f] / beamCorrectorSum);
 
     // Free memory
     cudaFree(d_P_Beams_Cor_imag);
@@ -639,17 +639,17 @@ namespace NpsGazeboSonar
     cudaFree(d_P_Beams_Cor_F_imag);
     cudaFree(d_P_Beams_Cor_F_real);
     cudaFree(d_beamCorrector_lin);
-    // cudaFree(d_window);
-    // cudaFree(d_diag_ptr);
+    cudaFree(d_window);
+    cudaFree(d_diag_ptr);
     cudaFreeHost(P_Beams_Cor_real);
     cudaFreeHost(P_Beams_Cor_imag);
-    // cudaFreeHost(P_Beams_Cor_F_real);
-    // cudaFreeHost(P_Beams_Cor_F_imag);
+    cudaFreeHost(P_Beams_Cor_F_real);
+    cudaFreeHost(P_Beams_Cor_F_imag);
     cudaFreeHost(P_Beams_Cor_real_tmp);
     cudaFreeHost(P_Beams_Cor_imag_tmp);
     cudaFreeHost(beamCorrector_lin);
-    // cudaFreeHost(window_diag);
-    // cudaFreeHost(diag_ptr);
+    cudaFreeHost(window_diag);
+    cudaFreeHost(diag_ptr);
 
     // For calc time measure
     if (debugFlag)

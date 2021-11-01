@@ -18,14 +18,15 @@
     <include>
       <uri>model://cylinder_sonar_tank</uri>
       <name>cylinder_sonar_tank</name>
-      <pose>0.05 0.0 0 0 0 0</pose>
+      <pose>0.10 0.0 0 0 0 0</pose>
       <static>true</static>
     </include>
 
     <!-- cylinder target -->
+    <!-- 14 deg -->
     <include>
       <uri>model://uw_apl_rod</uri>
-      <pose>0.5 0.0508 0.9144 0 1.5709 0</pose>
+      <pose>0.520 0.090 0.9144 0 1.5709 0.244346</pose>
       <static>true</static>
     </include>
 
@@ -33,9 +34,9 @@
     <!-- Sonar placed at 12" below water surface, 20" from the sonar tank wall -->
     <!-- zero roll and pitch, the water is ~48" deep -->
     <include>
-      <uri>model://oculus_m1200d_nps_multibeam_HF</uri>
+      <uri>model://oculus_m1200d_nps_multibeam_LF</uri>
       <name>oculus_m1200d</name>
-      <pose>0.5 -0.51 0.9144 0 0 1.5709</pose>
+      <pose>0.5 -0.5 0.9144 0 0 1.5709</pose>
       <static>true</static>
     </include>
 
