@@ -182,6 +182,11 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
       _sdf->GetElement("sonarImageTopicName")->Get<std::string>();
 
   // Read sonar properties from model.sdf
+  if (!_sdf->HasElement("verticalFOV"))
+    this->verticalFOV = 10;  // Blueview P900 -> 10 degrees
+  else
+    this->verticalFOV =
+      _sdf->GetElement("verticalFOV")->Get<double>();
   if (!_sdf->HasElement("sonarFreq"))
     this->sonarFreq = 900e3;  // Blueview P900 [Hz]
   else
@@ -732,7 +737,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                   hFOV,          // hFOV
                   vFOV,          // VFOV
                   hPixelSize,    // _beam_azimuthAngleWidth
-                  vFOV,          // _beam_elevationAngleWidth
+                  verticalFOV/180*M_PI,  // _beam_elevationAngleWidth
                   hPixelSize,    // _ray_azimuthAngleWidth
                   vPixelSize*(raySkips+1),  // _ray_elevationAngleWidth
                   this->soundSpeed,    // _soundSpeed

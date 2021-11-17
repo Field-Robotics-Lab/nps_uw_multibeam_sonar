@@ -7,7 +7,7 @@
     <include>
       <uri>model://sun</uri>
     </include>
-    
+
     <gui>
       <camera name='user_camera'>
         <pose>9.0 3.4 7.5 0.0 0.75 3.1</pose>
@@ -24,7 +24,7 @@
     <!-- cylinder target -->
     <include>
       <uri>model://cylinder_target</uri>
-      <pose>2.1 5.0 1.0 0 0 0</pose>
+      <pose>2.1 5.0 2.0 0 0 0</pose>
       <static>true</static>
     </include>
 
@@ -32,7 +32,7 @@
     <include>
       <uri>model://blueview_m450_nps_multibeam</uri>
       <name>blueview_m450</name>
-      <pose>2.1 1.0 1.0 0 0 1.5709</pose>
+      <pose>2.1 1.0 2.0 0 0 1.5709</pose>
       <static>true</static>
     </include>
 

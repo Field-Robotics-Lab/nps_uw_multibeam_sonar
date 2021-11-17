@@ -139,6 +139,7 @@ namespace gazebo
     private: bool constMu;
     private: double absorption;
     private: double attenuation;
+    private: double verticalFOV;
     // constant reflectivity
     private: double mu;
     // variational reflectivity
