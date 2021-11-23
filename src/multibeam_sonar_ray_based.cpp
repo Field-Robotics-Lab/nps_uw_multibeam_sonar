@@ -940,7 +940,7 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
     {
 
 
-        pcl::PointXYZI point = pcl_pointcloud->at(j, i);
+        pcl::PointXYZI point = pcl_pointcloud->at(j, this->width - i - 1);
         // Eigen::Vector3i xyz = point.getXYZVector3i();
 
                 // result.at<cv::Vec3b>(h,w)[0] = rgb[2];
