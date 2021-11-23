@@ -23,6 +23,10 @@
 #include <ros/advertise_options.h>
 
 #include <string>
+#include <complex>
+#include <valarray>
+#include <sstream>
+#include <chrono>
 
 // gazebo stuff
 #include <sdf/Param.hh>
@@ -45,6 +49,12 @@
 // ros messages
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/fill_image.h>
+#include <std_msgs/Float64.h>
+#include <image_transport/image_transport.h>
+#include <acoustic_msgs/SonarImage.h>
 
 // dynamic reconfigure stuff
 #include <gazebo_plugins/GazeboRosCameraConfig.h>
@@ -56,16 +66,50 @@
 // boost stuff
 #include <boost/thread/mutex.hpp>
 
+// For variational reflectivity
+#include <sdf/Element.hh>
+#include <gazebo/rendering/Scene.hh>
+#include <gazebo/rendering/Visual.hh>
+#include "selection_buffer/SelectionBuffer.hh"
+
 
 namespace gazebo
 {
+  typedef std::complex<float> Complex;
+  typedef std::valarray<Complex> CArray;
+  typedef std::valarray<CArray> CArray2D;
+
+  typedef std::valarray<float> Array;
+  typedef std::valarray<Array> Array2D;
+
   class NpsGazeboRosMultibeamSonarRay : public SensorPlugin, GazeboRosCameraUtils
   {
+    /// \brief Constructor
+    /// \param parent The parent entity, must be a Model or a Sensor
     public: NpsGazeboRosMultibeamSonarRay();
 
+    /// \brief Destructor
     public: ~NpsGazeboRosMultibeamSonarRay();
 
+    /// \brief Load the plugin
+    /// \param take in SDF root element
     public: virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
+
+    /// \brief Helper function to fill the list of fiducials with all models
+    /// in the world if none are specified
+    private: void PopulateFiducials();
+    // From FiducialCameraPlugin
+    /// \brief Selection buffer used for occlusion detection
+    public: std::unique_ptr<rendering::SelectionBuffer> selectionBuffer;
+
+    /// \brief Pointer to the scene.
+    public: rendering::ScenePtr scene;
+
+    /// \brief True to detect all objects in the world.
+    public: bool detectAll = false;
+
+    /// \brief A list of fiducials tracked by this camera.
+    public: std::set<std::string> fiducials;
 
     public: virtual void OnNewLaserFrame(const float *_image,
                 unsigned int _width, unsigned int _height,
@@ -83,33 +127,132 @@ namespace gazebo
 
     // overload with our own
     private: common::Time sensor_update_time_;
-    protected: ros::Publisher camera_info_pub_;
+    // protected: ros::Publisher camera_info_pub_;
 
     /// \brief Advertise
     public: virtual void Advertise();
 
     /// \brief Keep track of number of connctions for plugin outputs
     private: int point_cloud_connect_count_;
-    private: int camera_info_connect_count_;
+    private: int sonar_image_connect_count_;
+    // private: int camera_info_connect_count_;
     private: void PointCloudConnect();
     private: void PointCloudDisconnect();
-    private: void CameraInfoConnect();
-    private: void CameraInfoDisconnect();
+    private: void SonarImageConnect();
+    private: void SonarImageDisconnect();
+    // private: void CameraInfoConnect();
+    // private: void CameraInfoDisconnect();
 
     /// \brief Compute a normal texture and implement sonar model
-    private: void ComputePointCloud(const float *_src);
-    private: sensor_msgs::PointCloud2 point_cloud_msg_;
-    private: cv::Mat point_cloud_image_;
-    private: std::string point_cloud_topic_name_;
-    private: ros::Publisher point_cloud_pub_;
+    // private: void ComputePointCloud(const float *_src);
+    private: void UpdatePointCloud(const sensor_msgs::PointCloud2ConstPtr& _msg);
+    private: void ComputeSonarImage();
+    private: cv::Mat ComputeNormalImage(cv::Mat& depth);
     private: double point_cloud_cutoff_;
 
-    private: common::Time last_camera_info_update_time_;
-    private: std::string camera_info_topic_name_;
+    private: void ComputeCorrector();
+    private: cv::Mat rand_image;
 
-    using GazeboRosCameraUtils::PublishCameraInfo;
-    protected: virtual void PublishCameraInfo();
+    /// \brief Parameters for sonar properties
+    private: double sonarFreq;
+    private: double bandwidth;
+    private: double soundSpeed;
+    private: double maxDistance;
+    private: double sourceLevel;
+    private: bool constMu;
+    private: double absorption;
+    private: double attenuation;
+    private: double verticalFOV;
+    // constant reflectivity
+    private: double mu;
+    // variational reflectivity
+    private: std::string reflectivityDatabaseFileName;
+    private: std::string reflectivityDatabaseFilePath;
+    private: std::vector<std::string> objectNames;
+    private: std::vector<float> reflectivities;
+    private: double maxDepth, maxDepth_before, maxDepth_beforebefore;
+    private: double maxDepth_prev;
+    private: bool calculateReflectivity;
+    private: cv::Mat reflectivityImage;
+    private: float* rangeVector;
+    private: float* window;
+    private: float** beamCorrector;
+    private: float beamCorrectorSum;
+    private: int nFreq;
+    private: double df;
+    private: int nBeams;
+    private: int nRays;
+    private: int beamSkips;
+    private: int raySkips;
+    private: int ray_nAzimuthRays;
+    private: int ray_nElevationRays;
+    private: float plotScaler;
+    private: float sensorGain;
+    protected: bool debugFlag;
 
+    /// \brief A pointer to the ROS node.
+    /// A node will be instantiated if it does not exist.
+    private: ros::Publisher point_cloud_pub_;
+    private: ros::Publisher sonar_image_raw_pub_;
+    private: ros::Publisher sonar_image_pub_;
+
+    /// \brief Subcriber to VelodyneGpuLaserPointCloud
+    private: ros::Subscriber VelodyneGpuLaserPointCloud;
+    /// \brief A ROS callbackqueue that helps process messages
+    private: ros::CallbackQueue pointCloudSubQueue;
+    /// \brief A thread the keeps running the rosQueue
+    private: std::thread pointCloudSubQueueThread;
+    /// \brief ROS helper function that processes messages
+    private: void pointCloudSubThread();
+
+    private: sensor_msgs::PointCloud2 point_cloud_msg_;
+    private: acoustic_msgs::SonarImage sonar_image_raw_msg_;
+    private: sensor_msgs::Image sonar_image_msg_;
+    private: sensor_msgs::Image sonar_image_mono_msg_;
+    private: cv::Mat point_cloud_image_;
+
+    private: std::string point_cloud_topic_name_;
+    private: std::string sonar_image_raw_topic_name_;
+    private: std::string sonar_image_topic_name_;
+
+    /// \brief CSV log writing stream for verifications
+    protected: std::ofstream writeLog;
+    protected: u_int64_t writeCounter;
+    protected: u_int64_t writeNumber;
+    protected: u_int64_t writeInterval;
+    protected: bool writeLogFlag;
+
+    // private: common::Time last_camera_info_update_time_;
+    // private: std::string camera_info_topic_name_;
+
+    // using GazeboRosCameraUtils::PublishCameraInfo;
+    // protected: virtual void PublishCameraInfo();
+  };
+
+  ///////////////////////////////////////////
+  inline double unnormalized_sinc(double t)
+  {
+    try
+    {
+      double results = sin(t)/t;
+      if (results != results)
+        return 1.0;
+      else
+        return sin(t)/t;
+    }catch(int expn)
+    {
+      return 1.0;
+    }
+  }
+
+  /// \brief A class to store fiducial data
+  class FiducialData
+  {
+    /// \brief Fiducial ID
+    public: std::string id;
+
+    /// \brief Center point of the fiducial in the image
+    public: ignition::math::Vector2i pt;
   };
 }
 #endif

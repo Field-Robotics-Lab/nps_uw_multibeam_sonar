@@ -18,6 +18,6 @@
         type="rqt_image_view" args="/blueview_p900/sonar_image">
   </node>
 
-
+  <node pkg="tf" type="static_transform_publisher" name="multibeam_sonar_base_link" args="0 0 0 0 0 0 map forward_sonar_optical_link 50" />
 
 </launch>

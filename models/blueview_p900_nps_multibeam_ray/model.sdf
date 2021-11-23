@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
   <model name="blueview_p900_ray">
+
+    <!-- <link name="world"/> -->
+
     <link name="forward_sonar_link">
       <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -30,27 +33,43 @@
       </visual>
 
       <sensor name="ray_sonar" type="gpu_ray">
-        <visualize>true</visualize>
+        <visualize>false</visualize>
         <always_on>true</always_on>
         <update_rate>10</update_rate>
+
+        <plugin name="ray_sonar_sensor" filename="libgazebo_ros_velodyne_gpu_laser.so">
+           <topicName>multibeam_sonar_point_cloud</topicName>
+           <static_reference_frame>forward_sonar_optical_link</static_reference_frame>
+           <organize_cloud>true</organize_cloud>
+           <min_intensity>0</min_intensity>
+           <min_range>0.2</min_range>
+           <max_range>10</max_range>
+           <gaussianNoise>0.0</gaussianNoise>
+           <gpu>true</gpu>
+        </plugin>
+
         <ray>
           <scan>
+            <!-- Set horizontal FOV by setting image height -->
+            <!-- 512 beams with 90 degrees horizontal FOV (M900-90) -->
             <horizontal>
               <samples>512</samples>
-              <resolution>10</resolution>
+              <!-- <resolution>1</resolution> -->
               <min_angle>-0.78539816339</min_angle>
               <max_angle>0.78539816339</max_angle>
             </horizontal>
+            <!-- Set vertical FOV by setting image height -->
+            <!-- Approx 2 times the spec sheet (sepc: 20 deg.) -->
             <vertical>
-              <samples>114</samples>
-              <resolution>10</resolution>
-              <min_angle>-0.174533</min_angle>
-              <max_angle>0.174533</max_angle>
+              <samples>228</samples>
+              <!-- <resolution>1</resolution> -->
+              <min_angle>-0.349066</min_angle>
+              <max_angle>0.349066</max_angle>
             </vertical>
           </scan>
           <range>
             <min>0.20</min>
-            <max>60.0</max>
+            <max>10.0</max>
             <resolution>0.1</resolution>
           </range>
           <noise>
@@ -60,12 +79,40 @@
                 stddev of 0.01m will put 99.7% of samples within 0.03m of the true
                 reading. -->
             <mean>0.0</mean>
-            <stddev>0.01</stddev>
+            <stddev>0.0</stddev>
           </noise>
         </ray>
+        <!-- <plugin filename="libgazebo_ros_gpu_laser.so" name="forward_sonar_scan">
+          <topicName>/laser/scan</topicName>
+          <frameName>forward_sonar_optical_link</frameName>
+        </plugin> -->
         <plugin filename="libnps_multibeam_sonar_ray_ros_plugin.so" name="forward_sonar">
-          <cameraName>blueview_p900_ray</cameraName>
-          <topicName>/laser_raw</topicName>
+          <!-- Sonar properties -->
+          <verticalFOV>20</verticalFOV>
+          <sonarFreq>900e3</sonarFreq>
+          <bandwidth>29.9e3</bandwidth>
+          <soundSpeed>1500</soundSpeed>
+          <sourceLevel>220</sourceLevel>
+          <maxDistance>10</maxDistance>
+          <constantReflectivity>true</constantReflectivity>
+          <!-- The CSV databsefile is located at the worlds folder -->
+          <reflectivityDatabaseFile>variationalReflectivityDatabase.csv</reflectivityDatabaseFile>
+          <raySkips>10</raySkips>
+          <sensorGain>0.02</sensorGain>
+          <plotScaler>10</plotScaler>
+          <writeLog>true</writeLog>
+          <debugFlag>false</debugFlag>
+          <writeFrameInterval>5</writeFrameInterval>
+          <!-- This name is prepended to ROS topics -->
+          <cameraName>blueview_p900</cameraName>
+          <!-- ROS publication topics -->
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
+          <pointCloudTopicName>multibeam_sonar_point_cloud</pointCloudTopicName>
+          <depthImageTopicName>image_depth</depthImageTopicName>
+          <depthImageCameraInfoTopicName>image_depth/camera_info</depthImageCameraInfoTopicName>
+          <sonarImageRawTopicName>sonar_image_raw</sonarImageRawTopicName>
+          <sonarImageTopicName>sonar_image</sonarImageTopicName>
           <frameName>forward_sonar_optical_link</frameName>
         </plugin>
       </sensor>
@@ -117,6 +164,11 @@
       <parent>forward_sonar_link</parent>
       <child>forward_sonar_beam_visual_link</child>
     </joint>
+
+    <!-- <joint name="fixed" type="fixed">
+      <parent link="world"/>
+      <child link="forward_sonar_link"/>
+    </joint> -->
 
   </model>
 </sdf>

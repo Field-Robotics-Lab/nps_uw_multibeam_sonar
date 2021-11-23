@@ -14,10 +14,11 @@
   </node> -->
 
   <!-- rqt_image_view for image_raw_sonar -->
-  <!-- <node name="rqt_image_view_sonar" pkg="rqt_image_view"
+  <node name="rqt_image_view_sonar" pkg="rqt_image_view"
         type="rqt_image_view" args="/blueview_p900/sonar_image">
-  </node> -->
+  </node>
 
-
+  <!-- <node pkg="tf" type="static_transform_publisher" name="multibeam_sonar_base_link" args="0 0 0 0 0 0 map forward_sonar_optical_link 50" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="multibeam_sonar_base_link" args="0 0 0 0 0 0 world forward_sonar_optical_link 50" />
 
 </launch>

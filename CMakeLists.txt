@@ -25,6 +25,11 @@ find_package(roscpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 
+find_package(PCL REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_60")
@@ -67,12 +72,16 @@ list(APPEND SENSOR_ROS_PLUGINS_LIST nps_multibeam_sonar_ros_plugin)
 
 add_library(nps_multibeam_sonar_ray_ros_plugin
             src/multibeam_sonar_ray_based.cpp
+            src/sonar_calculation_cuda.cu
+            src/MaterialSwitcher.cc  # From gazebo/rendering/selection_buffer
+            src/SelectionBuffer.cc  # From gazebo/rendering/selection_buffer
+            src/SelectionRenderListener.cc  # From gazebo/rendering/selection_buffer
   )
 set_target_properties(nps_multibeam_sonar_ray_ros_plugin
                       PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(nps_multibeam_sonar_ray_ros_plugin
                       ${OGRE_LIBRARIES} ${catkin_LIBRARIES}
-                      ${CUDA_LIBRARIES}
+                      ${CUDA_LIBRARIES} ${PCL_LIBRARIES}
                       ${CUDA_CUFFT_LIBRARIES})
 add_dependencies(nps_multibeam_sonar_ray_ros_plugin ${catkin_EXPORTED_TARGETS})
 list(APPEND SENSOR_ROS_PLUGINS_LIST nps_multibeam_sonar_ray_ros_plugin)
