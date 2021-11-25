@@ -953,7 +953,7 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
           = sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
 
         if (!azimuth_angles_calculation_flag)
-          azimuth_angles.push_back(atan2(point.y,point.x));
+          azimuth_angles.push_back(-atan2(point.y,point.x));
 
 
           //  ROS_INFO_STREAM(atan2(point.y,point.x));
