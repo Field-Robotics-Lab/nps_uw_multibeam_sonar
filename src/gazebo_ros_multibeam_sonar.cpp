@@ -731,6 +731,7 @@ ROS_INFO_STREAM(vPixelSize);
 ROS_INFO_STREAM(hFOV);
 ROS_INFO_STREAM(vFOV);
 ROS_INFO_STREAM(verticalFOV/180*M_PI);
+ROS_INFO_STREAM(depth_image);
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
@@ -833,7 +834,7 @@ ROS_INFO_STREAM(verticalFOV/180*M_PI);
   double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
   for (size_t beam = 0; beam < nBeams; beam ++)
     azimuth_angles.push_back(atan2(static_cast<double>(beam) -
-                    0.5 * static_cast<double>(width-1), fl));
+                    0.5 * static_cast<double>(width), fl));
   this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
   // std::vector<float> elevation_angles;
   // elevation_angles.push_back(vFOV / 2.0);  // 1D in elevation
@@ -1018,7 +1019,7 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
     double elevation;
     if (this->height > 1)
       elevation = atan2(static_cast<double>(j) -
-                        0.5 * static_cast<double>(this->height-1), fl);
+                        0.5 * static_cast<double>(this->height), fl);
     else
       elevation = 0.0;
 
@@ -1028,7 +1029,7 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
       double azimuth;
       if (this->width > 1)
         azimuth = atan2(static_cast<double>(i) -
-                        0.5 * static_cast<double>(this->width-1), fl);
+                        0.5 * static_cast<double>(this->width), fl);
       else
         azimuth = 0.0;
 
@@ -1096,11 +1097,11 @@ void NpsGazeboRosMultibeamSonar::ComputeCorrector()
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
     float beam_azimuthAngle = atan2(static_cast<double>(beam) -
-                        0.5 * static_cast<double>(width-1), fl);
+                        0.5 * static_cast<double>(width), fl);
     for (size_t beam_other = 0; beam_other < nBeams; beam_other ++)
     {
       float beam_azimuthAngle_other = atan2(static_cast<double>(beam_other) -
-                        0.5 * static_cast<double>(width-1), fl);
+                        0.5 * static_cast<double>(width), fl);
       float azimuthBeamPattern =
         unnormalized_sinc(M_PI * 0.884 / hPixelSize
         * sin(beam_azimuthAngle-beam_azimuthAngle_other));

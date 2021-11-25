@@ -28,6 +28,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/features/normal_3d.h>
 
 #include <nps_uw_multibeam_sonar/sonar_calculation_cuda.cuh>
 
@@ -122,11 +123,9 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   ROS_INFO_STREAM("================1=====================");
   this->width = this->parentSensor->RangeCount();
   this->height = this->parentSensor->VerticalRangeCount();
-  this->depth = this->laserCamera->ImageDepth();
   this->format = this->laserCamera->ImageFormat();
 
   ROS_INFO_STREAM(this->format);
-  ROS_INFO_STREAM( this->depth);
   ROS_INFO_STREAM("=================2====================");
   this->newLaserFrameConnection = this->laserCamera->ConnectNewLaserFrame(
       std::bind(&NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame, this,
@@ -140,7 +139,6 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   this->parentSensor_ = this->parentSensor;
   this->width_ = this->width;
   this->height_ = this->height;
-  this->depth_ = this->depth;
   this->format_ = this->format;
   this->camera_ = this->laserCamera;
 
@@ -660,10 +658,11 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 
   cv::Mat depth_image = this->point_cloud_image_;
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
+  // cv::Mat normal_image = this->point_cloud_normal_image_;
   double vFOV = this->parentSensor->VertFOV();
   double hFOV = this->parentSensor->HorzFOV();
-  double vPixelSize = vFOV / this->height;
-  double hPixelSize = hFOV / this->width;
+  double vPixelSize = vFOV / (this->height-1);
+  double hPixelSize = hFOV / (this->width-1);
 
   if (this->beamCorrectorSum == 0)
     ComputeCorrector();
@@ -680,6 +679,7 @@ ROS_INFO_STREAM(vPixelSize);
 ROS_INFO_STREAM(hFOV);
 ROS_INFO_STREAM(vFOV);
 ROS_INFO_STREAM(verticalFOV/180*M_PI);
+// ROS_INFO_STREAM(depth_image);
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
@@ -778,11 +778,6 @@ ROS_INFO_STREAM(verticalFOV/180*M_PI);
   this->sonar_image_raw_msg_.sound_speed = this->soundSpeed;
   this->sonar_image_raw_msg_.azimuth_beamwidth = hPixelSize;
   this->sonar_image_raw_msg_.elevation_beamwidth = hPixelSize*this->nRays;
-  std::vector<float> azimuth_angles;
-  double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
-  for (size_t beam = 0; beam < nBeams; beam ++)
-    azimuth_angles.push_back(atan2(static_cast<double>(beam) -
-                    0.5 * static_cast<double>(width-1), fl));
   this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
   // std::vector<float> elevation_angles;
   // elevation_angles.push_back(vFOV / 2.0);  // 1D in elevation
@@ -930,13 +925,20 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
   // ROS_INFO_STREAM(pcl_pointcloud->points[this->width*this->height - 1].x);
 
 
+  double hFOV = this->parentSensor->HorzFOV();
+  // double fl = static_cast<double>(this->width) / (2.0 * tan(hFOV/2.0));
+  // double fr = static_cast<double>(this->width) / (2.0 * sin(hFOV/2.0));
 
-  int index = 0;
+  // int index = 0;
+  bool azimuth_angles_calculation_flag;
+  if (azimuth_angles.size() == 0)
+    azimuth_angles_calculation_flag = false;
+
   for (uint32_t j = 0; j < this->height; j++)
   {
     // for (uint32_t i = 0; i < this->width;
     //      i++, ++iter_x, ++iter_y, ++iter_z, ++iter_image)
-    for (uint32_t i = 0; i < this->width; i++, ++iter_image, ++index)
+    for (uint32_t i = 0; i < this->width; i++, ++iter_image)
     {
 
 
@@ -946,8 +948,15 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
                 // result.at<cv::Vec3b>(h,w)[0] = rgb[2];
                 // result.at<cv::Vec3b>(h,w)[1] = rgb[1];
                 // result.at<cv::Vec3b>(h,w)[2] = rgb[0];
+
         this->point_cloud_image_.at<float>(j, i)
           = sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
+
+        if (!azimuth_angles_calculation_flag)
+          azimuth_angles.push_back(atan2(point.y,point.x));
+
+
+          //  ROS_INFO_STREAM(atan2(point.y,point.x));
 
       // if (depth > this->point_cloud_cutoff_)
       // {
@@ -969,6 +978,44 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
   }
 
   ROS_INFO_STREAM("================== pt  ========5===");
+
+  // // Calculate normal
+  // // Create the normal estimation class, and pass the input dataset to it
+  // // pcl::PointCloud<pcl::PointXYZ> xyz;
+  // // pcl::copyPointCloud(xyz,pcl_pointcloud);
+  // pcl::NormalEstimation<pcl::PointXYZI, pcl::Normal> ne;
+  // ne.setInputCloud (pcl_pointcloud);
+
+  // // Create an empty kdtree representation, and pass it to the normal estimation object.
+  // // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
+  // pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI> ());
+  // ne.setSearchMethod (tree);
+
+  // // Output datasets
+  // pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
+
+  // // Use all neighbors in a sphere of radius 3cm
+  // ne.setRadiusSearch (0.03);
+
+  // // Compute the features
+  // ne.compute (*cloud_normals);
+
+  // // Allocate
+  // for (uint32_t j = 0; j < this->height; j++)
+  // {
+  //   for (uint32_t i = 0; i < this->width; i++)
+  //   {
+  //       pcl::Normal normal = cloud_normals->at(j, this->width - i - 1);
+
+  //       this->point_cloud_normal_image_.at<cv::Vec3f>(j, i)[0] = normal.data_c[0];
+  //       this->point_cloud_normal_image_.at<cv::Vec3f>(j, i)[1] = normal.data_c[1];
+  //       this->point_cloud_normal_image_.at<cv::Vec3f>(j, i)[2] = normal.data_c[2];
+  //       // if (isnan(normal))
+  //       //   *iter_image = 100000.0;
+  //   }
+  // }
+
+
   this->lock_.unlock();
 }
 
@@ -977,20 +1024,20 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
 void NpsGazeboRosMultibeamSonarRay::ComputeCorrector()
 {
   double hFOV = this->parentSensor->HorzFOV();
-  double hPixelSize = hFOV / this->width;
-  double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
+  double hPixelSize = hFOV / (this->width-1);
+  // double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
   // Beam culling correction precalculation
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
-    float beam_azimuthAngle = atan2(static_cast<double>(beam) -
-                        0.5 * static_cast<double>(width-1), fl);
+    // float beam_azimuthAngle = atan2(static_cast<double>(beam) -
+    //                     0.5 * static_cast<double>(width), fl);
     for (size_t beam_other = 0; beam_other < nBeams; beam_other ++)
     {
-      float beam_azimuthAngle_other = atan2(static_cast<double>(beam_other) -
-                        0.5 * static_cast<double>(width-1), fl);
+      // float beam_azimuthAngle_other = atan2(static_cast<double>(beam_other) -
+      //                   0.5 * static_cast<double>(width), fl);
       float azimuthBeamPattern =
         unnormalized_sinc(M_PI * 0.884 / hPixelSize
-        * sin(beam_azimuthAngle-beam_azimuthAngle_other));
+        * sin(azimuth_angles[beam]-azimuth_angles[beam_other]));
       this->beamCorrector[beam][beam_other] = abs(azimuthBeamPattern);
       this->beamCorrectorSum += pow(azimuthBeamPattern, 2);
     }
@@ -1046,6 +1093,7 @@ cv::Mat NpsGazeboRosMultibeamSonarRay::ComputeNormalImage(cv::Mat& depth)
       float& d = depth.at<float>(i, j);
     }
   }
+
   return normal_image;
 }
 

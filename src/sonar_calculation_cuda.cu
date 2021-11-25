@@ -194,10 +194,10 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
 
     // Calculate ray angles
     double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
-    float ray_azimuthAngle = atan2(static_cast<double>(beam) -
-                        0.5 * static_cast<double>(width-1), fl);
+    // float ray_azimuthAngle = atan2(static_cast<double>(beam) -
+    //                     0.5 * static_cast<double>(width), fl);
     float ray_elevationAngle = atan2(static_cast<double>(ray) -
-                        0.5 * static_cast<double>(height-1), fl);
+                        0.5 * static_cast<double>(height), fl);
 
     // Beam pattern
     // float azimuthBeamPattern = abs(unnormalized_sinc(M_PI * 0.884

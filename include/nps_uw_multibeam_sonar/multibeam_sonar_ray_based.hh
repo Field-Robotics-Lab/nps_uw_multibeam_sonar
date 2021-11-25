@@ -174,6 +174,7 @@ namespace gazebo
     private: double maxDepth_prev;
     private: bool calculateReflectivity;
     private: cv::Mat reflectivityImage;
+    std::vector<float> azimuth_angles;
     private: float* rangeVector;
     private: float* window;
     private: float** beamCorrector;
@@ -210,6 +211,7 @@ namespace gazebo
     private: sensor_msgs::Image sonar_image_msg_;
     private: sensor_msgs::Image sonar_image_mono_msg_;
     private: cv::Mat point_cloud_image_;
+    private: cv::Mat point_cloud_normal_image_;
 
     private: std::string point_cloud_topic_name_;
     private: std::string sonar_image_raw_topic_name_;
