@@ -33,7 +33,7 @@
       </visual>
 
       <sensor name="ray_sonar" type="gpu_ray">
-        <visualize>true</visualize>
+        <visualize>false</visualize>
         <always_on>true</always_on>
         <update_rate>10</update_rate>
 
@@ -117,6 +117,53 @@
         </plugin>
       </sensor>
     </link>
+
+    <link name="forward_sonar_beam_visual_link">
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>0.0001</mass>
+        <inertia>
+          <ixx>0.0000000017</ixx>          <!-- 1/12ml^2 -->
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00000000017</iyy>
+          <iyz>0</iyz>
+          <izz>0.00000000017</izz>
+        </inertia>
+      </inertial>
+      <sensor type="ray" name="forward_sonar_beam_visual">
+        <pose>0 0 0 0 0 0</pose>
+        <update_rate>5</update_rate>
+        <visualize>true</visualize>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>100</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.785398</min_angle>
+              <max_angle>0.785398</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>3</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.174533</min_angle>
+              <max_angle>0.174533</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.2</min>
+            <max>60</max>
+            <resolution>0.01</resolution>
+          </range>
+        </ray>
+      </sensor>
+    </link>
+
+    <joint name="forward_sonar_beam_visual_joint" type="fixed">
+      <pose>0 0 0 0 0 0</pose>
+      <parent>forward_sonar_link</parent>
+      <child>forward_sonar_beam_visual_link</child>
+    </joint>
 
     <!-- <joint name="fixed" type="fixed">
       <parent link="world"/>
