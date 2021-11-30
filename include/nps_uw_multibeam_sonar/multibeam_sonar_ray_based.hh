@@ -95,22 +95,6 @@ namespace gazebo
     /// \param take in SDF root element
     public: virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
 
-    /// \brief Helper function to fill the list of fiducials with all models
-    /// in the world if none are specified
-    private: void PopulateFiducials();
-    // From FiducialCameraPlugin
-    /// \brief Selection buffer used for occlusion detection
-    public: std::unique_ptr<rendering::SelectionBuffer> selectionBuffer;
-
-    /// \brief Pointer to the scene.
-    public: rendering::ScenePtr scene;
-
-    /// \brief True to detect all objects in the world.
-    public: bool detectAll = false;
-
-    /// \brief A list of fiducials tracked by this camera.
-    public: std::set<std::string> fiducials;
-
     public: virtual void OnNewLaserFrame(const float *_image,
                 unsigned int _width, unsigned int _height,
                 unsigned int _depth, const std::string &_format);
@@ -127,7 +111,6 @@ namespace gazebo
 
     // overload with our own
     private: common::Time sensor_update_time_;
-    // protected: ros::Publisher camera_info_pub_;
 
     /// \brief Advertise
     public: virtual void Advertise();
@@ -135,16 +118,12 @@ namespace gazebo
     /// \brief Keep track of number of connctions for plugin outputs
     private: int point_cloud_connect_count_;
     private: int sonar_image_connect_count_;
-    // private: int camera_info_connect_count_;
     private: void PointCloudConnect();
     private: void PointCloudDisconnect();
     private: void SonarImageConnect();
     private: void SonarImageDisconnect();
-    // private: void CameraInfoConnect();
-    // private: void CameraInfoDisconnect();
 
     /// \brief Compute a normal texture and implement sonar model
-    // private: void ComputePointCloud(const float *_src);
     private: void UpdatePointCloud(const sensor_msgs::PointCloud2ConstPtr& _msg);
     private: void ComputeSonarImage();
     private: cv::Mat ComputeNormalImage(cv::Mat& depth);
@@ -165,13 +144,6 @@ namespace gazebo
     private: double verticalFOV;
     // constant reflectivity
     private: double mu;
-    // variational reflectivity
-    private: std::string reflectivityDatabaseFileName;
-    private: std::string reflectivityDatabaseFilePath;
-    private: std::vector<std::string> objectNames;
-    private: std::vector<float> reflectivities;
-    private: double maxDepth, maxDepth_before, maxDepth_beforebefore;
-    private: double maxDepth_prev;
     private: bool calculateReflectivity;
     private: cv::Mat reflectivityImage;
     std::vector<float> azimuth_angles;
@@ -224,11 +196,6 @@ namespace gazebo
     protected: u_int64_t writeInterval;
     protected: bool writeLogFlag;
 
-    // private: common::Time last_camera_info_update_time_;
-    // private: std::string camera_info_topic_name_;
-
-    // using GazeboRosCameraUtils::PublishCameraInfo;
-    // protected: virtual void PublishCameraInfo();
   };
 
   ///////////////////////////////////////////

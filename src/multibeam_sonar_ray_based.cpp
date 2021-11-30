@@ -60,15 +60,8 @@ GZ_REGISTER_SENSOR_PLUGIN(NpsGazeboRosMultibeamSonarRay)
 NpsGazeboRosMultibeamSonarRay::NpsGazeboRosMultibeamSonarRay()
 : SensorPlugin(), width(0), height(0)
 {
-  // this->camera_info_connect_count_ = 0;
   this->point_cloud_connect_count_ = 0;
   this->sonar_image_connect_count_ = 0;
-  // this->last_camera_info_update_time_ = common::Time(0);
-
-  // frame counter for variational reflectivity
-  this->maxDepth_before = 0.0;
-  this->maxDepth_beforebefore = 0.0;
-  this->maxDepth_prev = 0.0;
 
   // for csv write logs
   this->writeCounter = 0;
@@ -101,13 +94,6 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
     return;
   }
 
-  ROS_INFO_STREAM("====================0=================");
-  // if (!_sdf->HasElement("cameraInfoTopicName"))
-  //   this->camera_info_topic_name_ = "ray/camera_info";
-  // else
-  //   this->camera_info_topic_name_ =
-  //       _sdf->GetElement("cameraInfoTopicName")->Get<std::string>();
-
   if (!_sdf->HasElement("pointCloudTopicName"))
     this->point_cloud_topic_name_ = "points";
   else
@@ -120,21 +106,16 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
     this->point_cloud_cutoff_ =
         _sdf->GetElement("pointCloudCutoff")->Get<double>();
 
-  ROS_INFO_STREAM("================1=====================");
   this->width = this->parentSensor->RangeCount();
   this->height = this->parentSensor->VerticalRangeCount();
-  this->format = this->laserCamera->ImageFormat();
-
-  ROS_INFO_STREAM(this->format);
-  ROS_INFO_STREAM("=================2====================");
+  // this->format = this->laserCamera->ImageFormat();
+  this->format = "R8G8B8";
   this->newLaserFrameConnection = this->laserCamera->ConnectNewLaserFrame(
       std::bind(&NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame, this,
         std::placeholders::_1, std::placeholders::_2, std::placeholders::_3,
         std::placeholders::_4, std::placeholders::_5));
 
   this->parentSensor->SetActive(true);
-
-  ROS_INFO_STREAM("=================3====================");
 
   this->parentSensor_ = this->parentSensor;
   this->width_ = this->width;
@@ -185,11 +166,6 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   else
     this->sourceLevel =
       _sdf->GetElement("sourceLevel")->Get<double>();
-  if (!_sdf->HasElement("constantReflectivity"))
-    this->constMu = true;
-  else
-    this->constMu =
-      _sdf->GetElement("constantReflectivity")->Get<bool>();
   if (!_sdf->HasElement("raySkips"))
     this->raySkips = 10;
   else
@@ -208,80 +184,8 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   // Configure skips
   if (this->raySkips == 0) this->raySkips = 1;
 
-  // --- Variational Reflectivity --- //
-  // Read the variational reflectivity database file path from the SDF file
-  if (!this->constMu)
-  {
-    if (!_sdf->HasElement("reflectivityDatabaseFile"))
-    {
-      this->reflectivityDatabaseFileName = "variationalReflectivityDatabase.csv";
-    }
-    else
-    {
-      this->reflectivityDatabaseFileName =
-        _sdf->GetElement("reflectivityDatabaseFile")->Get<std::string>();
-      GZ_ASSERT(!this->reflectivityDatabaseFileName.empty(),
-        "Empty variational reflectivity database file name");
-    }
-  }
-
+  this->constMu = true;
   this->mu = 1e-3;  // default constant mu
-
-  this->reflectivityDatabaseFilePath =
-    ros::package::getPath("nps_uw_multibeam_sonar")
-        + "/worlds/" + this->reflectivityDatabaseFileName;
-
-  // Read csv file
-  std::ifstream csvFile; std::string line;
-  csvFile.open(this->reflectivityDatabaseFilePath);
-  // skip the 3 lines
-  getline(csvFile, line); getline(csvFile, line); getline(csvFile, line);
-  while (getline(csvFile, line))
-  {
-      if (line.empty())  // skip empty lines:
-      {
-          continue;
-      }
-      std::istringstream iss(line);
-      std::string lineStream;
-      std::string::size_type sz;
-      std::vector <std::string> row;
-      while (getline(iss, lineStream, ','))
-      {
-          row.push_back(lineStream);
-      }
-      this->objectNames.push_back(row[0]);
-      this->reflectivities.push_back(stof(row[1], &sz));
-  }
-
-  // // From FiducialCameraPlugin
-  // if (this->camera_)
-  // {
-  //   this->scene = this->camera_->GetScene();
-  // }
-  // if (!this->camera_ || !this->scene)
-  // {
-  //   gzerr << "SonarDummy failed to load. "
-  //       << "Camera and/or Scene not found" << std::endl;
-  // }
-  // // load the fiducials
-  // if (_sdf->HasElement("fiducial"))
-  // {
-  //   sdf::ElementPtr elem = _sdf->GetElement("fiducial");
-  //   while (elem)
-  //   {
-  //     this->fiducials.insert(elem->Get<std::string>());
-  //     elem = elem->GetNextElement("fiducial");
-  //   }
-  // }
-  // else
-  // {
-  //   gzmsg << "No fiducials specified. All models will be tracked."
-  //       << std::endl;
-  //   this->detectAll = true;
-  // }
-
-
 
   // Transmission path properties (typical model used here)
   // More sophisticated model by Francois-Garrison model is available
@@ -386,23 +290,6 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
     GazeboRosCameraUtils::OnLoad(
             boost::bind(&NpsGazeboRosMultibeamSonarRay::Advertise, this));
   GazeboRosCameraUtils::Load(_sensor, _sdf);
-
-
-  ROS_INFO_STREAM("Plugin Loaded!!!!!!!!!!!!");
-}
-
-void NpsGazeboRosMultibeamSonarRay::PopulateFiducials()
-{
-  this->fiducials.clear();
-
-  // Check all models for inclusion in the frustum.
-  rendering::VisualPtr worldVis = this->scene->WorldVisual();
-  for (unsigned int i = 0; i < worldVis->GetChildCount(); ++i)
-  {
-    rendering::VisualPtr childVis = worldVis->GetChild(i);
-    if (childVis->GetType() == rendering::Visual::VT_MODEL)
-      this->fiducials.insert(childVis->Name());
-  }
 }
 
 void NpsGazeboRosMultibeamSonarRay::pointCloudSubThread()
@@ -414,34 +301,8 @@ void NpsGazeboRosMultibeamSonarRay::pointCloudSubThread()
   }
 }
 
-
 void NpsGazeboRosMultibeamSonarRay::Advertise()
 {
-  // ROS_INFO_STREAM("=================3=========1===========");
-  // ros::AdvertiseOptions camera_info_ao =
-  //   ros::AdvertiseOptions::create<sensor_msgs::CameraInfo>(
-  //       this->camera_info_topic_name_, 1,
-  //       boost::bind(&NpsGazeboRosMultibeamSonarRay::CameraInfoConnect, this),
-  //       boost::bind(&NpsGazeboRosMultibeamSonarRay::CameraInfoDisconnect, this),
-  //       ros::VoidPtr(), &this->camera_queue_);
-  // this->camera_info_pub_ =
-  //   this->rosnode_->advertise(camera_info_ao);
-
-  // ROS_INFO_STREAM("=================3========2============");
-  // ros::AdvertiseOptions point_cloud_ao =
-  //   ros::AdvertiseOptions::create<sensor_msgs::PointCloud2>(
-  //     this->point_cloud_topic_name_, 1,
-  //     boost::bind(&NpsGazeboRosMultibeamSonarRay::PointCloudConnect, this),
-  //     boost::bind(&NpsGazeboRosMultibeamSonarRay::PointCloudDisconnect, this),
-  //     ros::VoidPtr(), &this->camera_queue_);
-  // this->point_cloud_pub_ = this->rosnode_->advertise(point_cloud_ao);
-
-
-  // Velodyne Laser sensor point cloud subscriber
-  // this->VelodyneGpuLaserPointCloud = this->rosnode_->subscribe<sensor_msgs::PointCloud2>
-  //       (this->point_cloud_topic_name_, 10 ,boost::bind(&NpsGazeboRosMultibeamSonarRay::UpdatePointCloud, this, _1));
-
-
   ros::SubscribeOptions so =
   ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
       "/" + this->point_cloud_topic_name_, 1,
@@ -496,158 +357,22 @@ void NpsGazeboRosMultibeamSonarRay::SonarImageDisconnect()
     this->parentSensor->SetActive(false);
 }
 
-// void NpsGazeboRosMultibeamSonarRay::CameraInfoConnect()
-// {
-//   this->camera_info_connect_count_++;
-// }
-
-// void NpsGazeboRosMultibeamSonarRay::CameraInfoDisconnect()
-// {
-//   this->camera_info_connect_count_--;
-// }
-
 /////////////////////////////////////////////////
 void NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame(const float *_image,
     unsigned int _width, unsigned int _height,
     unsigned int _depth, const std::string &_format)
 {
-
-  ROS_INFO_STREAM("=================4====================");
   this->sensor_update_time_ = this->parentSensor->LastMeasurementTime();
-
-  // ROS_INFO_STREAM("=================4=========1===========");
   if (this->parentSensor->IsActive())
   {
-  // ROS_INFO_STREAM("=================4=========2===========");
-
-    // // TODO Currently no deactivation function alive
-    // // // Deactivate if no subscribers
-    // if (this->point_cloud_connect_count_ <= 0)
-    // {
-    //   this->parentSensor->SetActive(false);
-    // }
-    // else
-    // {
-    //   // this->ComputePointCloud(_image);
-
-      if (this->sonar_image_connect_count_ > 0){
-        this->ComputeSonarImage();
-      }
-    // }
+    if (this->sonar_image_connect_count_ > 0)
+      this->ComputeSonarImage();
   }
   else
   {
-  // ROS_INFO_STREAM("=================4=========3===========");
     if (this->sonar_image_connect_count_ > 0)
       this->parentSensor->SetActive(true);
   }
-
-  // ROS_INFO_STREAM("=================5====================");
-
-  // // For variational reflectivity
-  // if (!this->constMu)
-  // {
-  //   // Calculate only if the maxDepth from depth camera is changed and stabled
-  //   double min; cv::minMaxLoc(this->point_cloud_image_, &min, &this->maxDepth);
-  //   if (this->maxDepth == this->maxDepth_before
-  //       && this->maxDepth == this->maxDepth_beforebefore
-  //       && this->calculateReflectivity == false
-  //       && this->maxDepth != this->maxDepth_prev)
-  //   {
-  //     this->calculateReflectivity = true;
-  //     this->maxDepth_prev = this->maxDepth;
-
-  //     // Regenerate reand image
-  //     uint64 randN = static_cast<uint64>(std::rand());
-  //     cv::theRNG().state = randN;
-  //     cv::RNG rng = cv::theRNG();
-  //     rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.f);
-  //   }
-  //   else
-  //     this->calculateReflectivity = false;
-
-  //   this->maxDepth_beforebefore = this->maxDepth_before;
-  //   this->maxDepth_before = this->maxDepth;
-
-  //   if (calculateReflectivity)
-  //   {
-  //     // Generate reflectivity opencv image palette
-  //     cv::Mat reflectivity_image = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
-
-  //     if (!this->selectionBuffer)
-  //     {
-  //       std::string cameraName = this->camera_->OgreCamera()->getName();
-  //       this->selectionBuffer.reset(
-  //           new rendering::SelectionBuffer(cameraName,
-  //           this->scene->OgreSceneManager(),
-  //           this->camera_->RenderTexture()->getBuffer()->
-  //           getRenderTarget()));
-  //     }
-
-  //     if (this->detectAll)
-  //       this->PopulateFiducials();
-
-  //     std::vector<FiducialData> results;
-  //     for (const auto &f : this->fiducials)
-  //     {
-  //       // check if fiducial is visible within the frustum
-  //       rendering::VisualPtr vis = this->scene->GetVisual(f);
-  //       if (!vis)
-  //         continue;
-
-  //       if (!this->camera_->IsVisible(vis))
-  //         continue;
-
-  //       // Loop over every pixel
-  //       for (int i=0; i<reflectivity_image.rows; i++)
-  //       {
-  //         for (int j=0; j<reflectivity_image.cols; j+=raySkips)
-  //         {
-  //           // target pixel
-  //           ignition::math::Vector2i pt = ignition::math::Vector2i(i, j);
-
-  //           // use selection buffer to check if visual is occluded by other entities
-  //           // in the camera view
-  //           Ogre::Entity *entity =
-  //             this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
-
-  //           rendering::VisualPtr result;
-  //           if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
-  //           {
-  //             try
-  //             {
-  //               result = this->scene->GetVisual(
-  //                   Ogre::any_cast<std::string>(
-  //                   entity->getUserObjectBindings().getUserAny()));
-  //             }
-  //             catch(Ogre::Exception &_e)
-  //             {
-  //               gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
-  //               continue;
-  //             }
-  //           }
-
-  //           if (result && result->GetRootVisual() == vis)
-  //           {
-  //             FiducialData fd;
-  //             fd.id = vis->Name();
-  //             fd.pt = pt;
-
-  //             // Assign variational reflectivity
-  //             for (int k=0; k<objectNames.size(); k++)
-  //               if (vis->Name() == objectNames[k])
-  //                 reflectivity_image.at<float>(j, i) = reflectivities[k];
-  //             // results.push_back(fd);  // Redundant
-  //           }
-  //         }
-  //       }  // end of pixel loop
-  //     }  // end of selection buffer
-
-  //     // Save reflectivity image
-  //     this->reflectivityImage = reflectivity_image;
-  //   }  // end of variational reflectivity calculation
-  // }  // end of variational reflectivity bool
-
 }
 
 /////////////////////////////////////////////////
@@ -658,7 +383,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 
   cv::Mat depth_image = this->point_cloud_image_;
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
-  // cv::Mat normal_image = this->point_cloud_normal_image_;
   double vFOV = this->parentSensor->VertFOV();
   double hFOV = this->parentSensor->HorzFOV();
   double vPixelSize = vFOV / (this->height-1);
@@ -670,16 +394,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   // Default value for reflectivity
   if (this->reflectivityImage.rows == 0)
     this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
-
-ROS_INFO_STREAM("================= Ray based ==============");
-ROS_INFO_STREAM(depth_image.size());
-ROS_INFO_STREAM(normal_image.size());
-ROS_INFO_STREAM(hPixelSize);
-ROS_INFO_STREAM(vPixelSize);
-ROS_INFO_STREAM(hFOV);
-ROS_INFO_STREAM(vFOV);
-ROS_INFO_STREAM(verticalFOV/180*M_PI);
-// ROS_INFO_STREAM(depth_image);
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
@@ -779,14 +493,10 @@ ROS_INFO_STREAM(verticalFOV/180*M_PI);
   this->sonar_image_raw_msg_.azimuth_beamwidth = hPixelSize;
   this->sonar_image_raw_msg_.elevation_beamwidth = hPixelSize*this->nRays;
   this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
-  // std::vector<float> elevation_angles;
-  // elevation_angles.push_back(vFOV / 2.0);  // 1D in elevation
-  // this->sonar_image_raw_msg_.elevation_angles = elevation_angles;
   std::vector<float> ranges;
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
   this->sonar_image_raw_msg_.ranges = ranges;
-
   // this->sonar_image_raw_msg_.is_bigendian = false;
   this->sonar_image_raw_msg_.data_size = 1;  // sizeof(float) * nFreq * nBeams;
   std::vector<uchar> intensities;
@@ -894,40 +604,12 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
 {
   this->lock_.lock();
 
-  // ROS_INFO_STREAM("================== pt  ========1===");
   this->point_cloud_image_.create(this->height, this->width, CV_32FC1);
-
-  // sensor_msgs::PointCloud2Modifier pcd_modifier(const_cast<sensor_msgs::PointCloud2*>(_msg));
-  // pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
-  // pcd_modifier.resize(this->height * this->width);
-  // ROS_INFO_STREAM("================== pt  ========2===");
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
   pcl::fromROSMsg(*_msg,*pcl_pointcloud);
-  // ROS_INFO_STREAM("================== pt  ========3===");
-
-  // sensor_msgs::PointCloud2Iterator<float> iter_x(point_cloud_msg_, "x");
-  // sensor_msgs::PointCloud2Iterator<float> iter_y(point_cloud_msg_, "y");
-  // sensor_msgs::PointCloud2Iterator<float> iter_z(point_cloud_msg_, "z");
   cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
-
-  ROS_INFO_STREAM("================== pt  ========4===");
-  // double hfov = this->parentSensor->HorzFOV();
-  // double hfl = static_cast<double>(this->width) / (2.0 * tan(hfov/2.0));
-  // double vfov = this->parentSensor->VertFOV();
-  // double vfl = static_cast<double>(this->height) / (2.0 * tan(vfov/2.0));
-
-  // ROS_INFO_STREAM(pcl_pointcloud->points.size());
-  // ROS_INFO_STREAM(pcl_pointcloud->points[1].x);
-  // ROS_INFO_STREAM(this->height);
-  // ROS_INFO_STREAM(this->width);
-  // ROS_INFO_STREAM(this->width*this->height);
-  // ROS_INFO_STREAM(pcl_pointcloud->points[this->width*this->height - 1].x);
-
-
   double hFOV = this->parentSensor->HorzFOV();
-  // double fl = static_cast<double>(this->width) / (2.0 * tan(hFOV/2.0));
-  // double fr = static_cast<double>(this->width) / (2.0 * sin(hFOV/2.0));
 
   // int index = 0;
   bool azimuth_angles_calculation_flag;
@@ -936,48 +618,21 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
 
   for (uint32_t j = 0; j < this->height; j++)
   {
-    // for (uint32_t i = 0; i < this->width;
-    //      i++, ++iter_x, ++iter_y, ++iter_z, ++iter_image)
     for (uint32_t i = 0; i < this->width; i++, ++iter_image)
     {
 
+      pcl::PointXYZI point = pcl_pointcloud->at(j, this->width - i - 1);
 
-        pcl::PointXYZI point = pcl_pointcloud->at(j, this->width - i - 1);
-        // Eigen::Vector3i xyz = point.getXYZVector3i();
+      this->point_cloud_image_.at<float>(j, i)
+        = sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
 
-                // result.at<cv::Vec3b>(h,w)[0] = rgb[2];
-                // result.at<cv::Vec3b>(h,w)[1] = rgb[1];
-                // result.at<cv::Vec3b>(h,w)[2] = rgb[0];
+      if (!azimuth_angles_calculation_flag)
+        azimuth_angles.push_back(-atan2(point.y,point.x));
 
-        this->point_cloud_image_.at<float>(j, i)
-          = sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
-
-        if (!azimuth_angles_calculation_flag)
-          azimuth_angles.push_back(-atan2(point.y,point.x));
-
-
-          //  ROS_INFO_STREAM(atan2(point.y,point.x));
-
-      // if (depth > this->point_cloud_cutoff_)
-      // {
-        // *iter_image = sqrt(*iter_x * *iter_x +
-        //                    *iter_y * *iter_y +
-        //                    *iter_z * *iter_z);
-        // *iter_image = sqrt(pcl_pointcloud->points[index].x * pcl_pointcloud->points[index].x +
-        //                   pcl_pointcloud->points[index].y * pcl_pointcloud->points[index].y +
-        //                   pcl_pointcloud->points[index].z * pcl_pointcloud->points[index].z);
-
-        if (isnan(*iter_image))
-          *iter_image = 100000.0;
-      // }
-      // else  // point in the unseeable range
-      // {
-      //   *iter_image = 0.0;
-      // }
+      if (isnan(*iter_image))
+        *iter_image = 100000.0;
     }
   }
-
-  ROS_INFO_STREAM("================== pt  ========5===");
 
   // // Calculate normal
   // // Create the normal estimation class, and pass the input dataset to it
@@ -1014,7 +669,6 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
   //       //   *iter_image = 100000.0;
   //   }
   // }
-
 
   this->lock_.unlock();
 }
@@ -1096,32 +750,5 @@ cv::Mat NpsGazeboRosMultibeamSonarRay::ComputeNormalImage(cv::Mat& depth)
 
   return normal_image;
 }
-
-/////////////////////////////////////////////////
-// void NpsGazeboRosMultibeamSonarRay::PublishCameraInfo()
-// {
-
-//   ROS_INFO_STREAM("================= PublishCameraInfo ====================");
-
-//   ROS_DEBUG_NAMED("laser_camera",
-//     "publishing default camera info, then laser camera info");
-//   GazeboRosCameraUtils::PublishCameraInfo();
-
-//   if (this->camera_info_connect_count_ > 0)
-//   {
-//     common::Time sensor_update_time
-//           = this->parentSensor_->LastMeasurementTime();
-
-//     this->sensor_update_time_ = sensor_update_time;
-//     if (sensor_update_time
-//           - this->last_camera_info_update_time_
-//           >= this->update_period_)
-//     {
-//       this->PublishCameraInfo(this->camera_info_pub_);
-//       // , sensor_update_time);
-//       this->last_camera_info_update_time_ = sensor_update_time;
-//     }
-//   }
-// }
 
 }
