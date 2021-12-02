@@ -723,16 +723,6 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   if (this->reflectivityImage.rows == 0)
     this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
 
-ROS_INFO_STREAM("================= Camera based ==============");
-ROS_INFO_STREAM(depth_image.size());
-ROS_INFO_STREAM(normal_image.size());
-ROS_INFO_STREAM(hPixelSize);
-ROS_INFO_STREAM(vPixelSize);
-ROS_INFO_STREAM(hFOV);
-ROS_INFO_STREAM(vFOV);
-ROS_INFO_STREAM(verticalFOV/180*M_PI);
-ROS_INFO_STREAM(depth_image);
-
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
   // ------------------------------------------------//
