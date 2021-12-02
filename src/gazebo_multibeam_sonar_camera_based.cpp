@@ -30,7 +30,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 
-#include <nps_uw_multibeam_sonar/gazebo_ros_multibeam_sonar.hh>
+#include <nps_uw_multibeam_sonar/gazebo_multibeam_sonar_camera_based.hh>
 #include <gazebo/sensors/Sensor.hh>
 #include <sdf/sdf.hh>
 #include <gazebo/sensors/SensorTypes.hh>

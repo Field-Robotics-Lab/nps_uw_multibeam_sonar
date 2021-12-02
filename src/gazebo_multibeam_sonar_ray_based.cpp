@@ -37,7 +37,7 @@
 #include <boost/bind.hpp>
 
 #include <functional>
-#include <nps_uw_multibeam_sonar/multibeam_sonar_ray_based.hh>
+#include <nps_uw_multibeam_sonar/gazebo_multibeam_sonar_ray_based.hh>
 #include <sdf/sdf.hh>
 #include <gazebo/sensors/Sensor.hh>
 #include <gazebo/sensors/SensorTypes.hh>
