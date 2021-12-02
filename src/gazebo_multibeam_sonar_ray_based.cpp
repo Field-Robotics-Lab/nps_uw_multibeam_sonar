@@ -303,6 +303,7 @@ void NpsGazeboRosMultibeamSonarRay::pointCloudSubThread()
 
 void NpsGazeboRosMultibeamSonarRay::Advertise()
 {
+  // Publisher for point cloud
   ros::SubscribeOptions so =
   ros::SubscribeOptions::create<sensor_msgs::PointCloud2>(
       "/" + this->point_cloud_topic_name_, 1,
@@ -313,7 +314,16 @@ void NpsGazeboRosMultibeamSonarRay::Advertise()
   this->pointCloudSubQueueThread = std::thread(std::bind(
       &NpsGazeboRosMultibeamSonarRay::pointCloudSubThread, this));
 
-  // Publisher for sonar image
+  // Publisher for normal image
+  ros::AdvertiseOptions normal_image_ao =
+    ros::AdvertiseOptions::create<sensor_msgs::Image>(
+      "/" + this->point_cloud_topic_name_ + "_normal_image", 1,
+      boost::bind(&NpsGazeboRosMultibeamSonarRay::SonarImageConnect, this),
+      boost::bind(&NpsGazeboRosMultibeamSonarRay::SonarImageDisconnect, this),
+      ros::VoidPtr(), &this->camera_queue_);
+  this->normal_image_pub_ = this->rosnode_->advertise(normal_image_ao);
+
+  // Publisher for sonar raw data
   ros::AdvertiseOptions sonar_image_raw_ao =
     ros::AdvertiseOptions::create<acoustic_msgs::SonarImage>(
       this->sonar_image_raw_topic_name_, 1,
@@ -322,6 +332,7 @@ void NpsGazeboRosMultibeamSonarRay::Advertise()
       ros::VoidPtr(), &this->camera_queue_);
   this->sonar_image_raw_pub_ = this->rosnode_->advertise(sonar_image_raw_ao);
 
+  // Publisher for sonar image
   ros::AdvertiseOptions sonar_image_ao =
     ros::AdvertiseOptions::create<sensor_msgs::Image>(
       this->sonar_image_topic_name_, 1,
@@ -596,6 +607,23 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 
   // ---------------------------------------- End of sonar calculation
 
+  // Still publishing the normal image (just because)
+  this->normal_image_msg_.header.frame_id
+        = this->frame_name_;
+  this->normal_image_msg_.header.stamp.sec
+        = this->sensor_update_time_.sec;
+  this->normal_image_msg_.header.stamp.nsec
+        = this->sensor_update_time_.nsec;
+  cv::Mat normal_image8;
+  normal_image.convertTo(normal_image8, CV_8UC3, 255.0);
+  img_bridge = cv_bridge::CvImage(this->normal_image_msg_.header,
+                                  sensor_msgs::image_encodings::RGB8,
+                                  normal_image8);
+  img_bridge.toImageMsg(this->normal_image_msg_);
+  // from cv_bridge to sensor_msgs::Image
+  this->normal_image_pub_.publish(this->normal_image_msg_);
+
+
   this->lock_.unlock();
 }
 
@@ -633,42 +661,6 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
         *iter_image = 100000.0;
     }
   }
-
-  // // Calculate normal
-  // // Create the normal estimation class, and pass the input dataset to it
-  // // pcl::PointCloud<pcl::PointXYZ> xyz;
-  // // pcl::copyPointCloud(xyz,pcl_pointcloud);
-  // pcl::NormalEstimation<pcl::PointXYZI, pcl::Normal> ne;
-  // ne.setInputCloud (pcl_pointcloud);
-
-  // // Create an empty kdtree representation, and pass it to the normal estimation object.
-  // // Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
-  // pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI> ());
-  // ne.setSearchMethod (tree);
-
-  // // Output datasets
-  // pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
-
-  // // Use all neighbors in a sphere of radius 3cm
-  // ne.setRadiusSearch (0.03);
-
-  // // Compute the features
-  // ne.compute (*cloud_normals);
-
-  // // Allocate
-  // for (uint32_t j = 0; j < this->height; j++)
-  // {
-  //   for (uint32_t i = 0; i < this->width; i++)
-  //   {
-  //       pcl::Normal normal = cloud_normals->at(j, this->width - i - 1);
-
-  //       this->point_cloud_normal_image_.at<cv::Vec3f>(j, i)[0] = normal.data_c[0];
-  //       this->point_cloud_normal_image_.at<cv::Vec3f>(j, i)[1] = normal.data_c[1];
-  //       this->point_cloud_normal_image_.at<cv::Vec3f>(j, i)[2] = normal.data_c[2];
-  //       // if (isnan(normal))
-  //       //   *iter_image = 100000.0;
-  //   }
-  // }
 
   this->lock_.unlock();
 }

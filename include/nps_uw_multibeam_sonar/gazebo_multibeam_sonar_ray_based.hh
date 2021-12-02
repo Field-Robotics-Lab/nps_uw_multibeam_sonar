@@ -166,6 +166,7 @@ namespace gazebo
     /// \brief A pointer to the ROS node.
     /// A node will be instantiated if it does not exist.
     private: ros::Publisher point_cloud_pub_;
+    private: ros::Publisher normal_image_pub_;
     private: ros::Publisher sonar_image_raw_pub_;
     private: ros::Publisher sonar_image_pub_;
 
@@ -179,6 +180,7 @@ namespace gazebo
     private: void pointCloudSubThread();
 
     private: sensor_msgs::PointCloud2 point_cloud_msg_;
+    private: sensor_msgs::Image normal_image_msg_;
     private: acoustic_msgs::SonarImage sonar_image_raw_msg_;
     private: sensor_msgs::Image sonar_image_msg_;
     private: sensor_msgs::Image sonar_image_mono_msg_;
