@@ -55,7 +55,7 @@ catkin_package(
 
 ## Plugins
 add_library(nps_multibeam_sonar_ros_plugin
-            src/gazebo_ros_multibeam_sonar.cpp
+            src/gazebo_multibeam_sonar_camera_based.cpp
             src/sonar_calculation_cuda.cu
             src/MaterialSwitcher.cc  # From gazebo/rendering/selection_buffer
             src/SelectionBuffer.cc  # From gazebo/rendering/selection_buffer
@@ -71,7 +71,7 @@ add_dependencies(nps_multibeam_sonar_ros_plugin ${catkin_EXPORTED_TARGETS})
 list(APPEND SENSOR_ROS_PLUGINS_LIST nps_multibeam_sonar_ros_plugin)
 
 add_library(nps_multibeam_sonar_ray_ros_plugin
-            src/multibeam_sonar_ray_based.cpp
+            src/gazebo_multibeam_sonar_ray_based.cpp
             src/sonar_calculation_cuda.cu
             src/MaterialSwitcher.cc  # From gazebo/rendering/selection_buffer
             src/SelectionBuffer.cc  # From gazebo/rendering/selection_buffer
