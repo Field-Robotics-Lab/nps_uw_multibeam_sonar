@@ -245,12 +245,16 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
         this->writeInterval = 10;
       ROS_INFO_STREAM("Raw data at " << "/tmp/SonarRawData_{numbers}.csv");
       ROS_INFO_STREAM("every " << this->writeInterval << " frames");
+      ROS_INFO_STREAM("Also, Beam angles at /tmp/SonarRawData_beam_angles.csv");
       ROS_INFO_STREAM("");
 
       struct stat buffer;
       std::string logfilename("/tmp/SonarRawData_000001.csv");
       if (stat (logfilename.c_str(), &buffer) == 0)
+      {
         system("rm /tmp/SonarRawData*.csv");
+        system("rm /tmp/SonarRawData_beam_angles.csv");
+      }
     }
   }
 
@@ -488,6 +492,22 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
       }
       writeLog.close();
 
+      // write beam (azimuth) angles
+      if (this->writeNumber == 1)
+      {
+        std::stringstream filename_angle;
+        filename_angle << "/tmp/SonarRawData_beam_angles.csv";
+        writeLog.open(filename_angle.str().c_str(), std::ios_base::app);
+        filename_angle.clear();
+        writeLog << "# Raw Sonar Data Log \n";
+        writeLog << "# Beam (azimuth) angles of rays\n";
+        writeLog << "#  nBeams : " << nBeams << "\n";
+        writeLog << "# Simulation time : " << time << "\n";
+        for (size_t i = 0; i < this->azimuth_angles.size(); i++)
+          writeLog << this->azimuth_angles[i]<< "\n";
+        writeLog.close();
+      }
+
       this->writeNumber = this->writeNumber + 1;
     }
   }
@@ -503,7 +523,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   this->sonar_image_raw_msg_.sound_speed = this->soundSpeed;
   this->sonar_image_raw_msg_.azimuth_beamwidth = hPixelSize;
   this->sonar_image_raw_msg_.elevation_beamwidth = hPixelSize*this->nRays;
-  this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
+  this->sonar_image_raw_msg_.azimuth_angles = this->azimuth_angles;
   std::vector<float> ranges;
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
@@ -551,11 +571,11 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 
   for ( int b = 0; b < nBeams; ++b )
   {
-    const float center = azimuth_angles[b];
+    const float center = this->azimuth_angles[b];
     float begin = 0.0, end = 0.0;
     if (b == 0)
     {
-      end = (azimuth_angles[b + 1] + center) / 2.0;
+      end = (this->azimuth_angles[b + 1] + center) / 2.0;
       begin = 2 * center - end;
     }
     else if (b == nBeams - 1)
@@ -566,7 +586,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
     else
     {
       begin = angles[b - 1].end;
-      end = (azimuth_angles[b + 1] + center) / 2.0;
+      end = (this->azimuth_angles[b + 1] + center) / 2.0;
     }
     angles.push_back(BearingEntry(begin, center, end));
   }
@@ -639,23 +659,22 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
   cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
   double hFOV = this->parentSensor->HorzFOV();
 
-  // int index = 0;
-  bool azimuth_angles_calculation_flag;
-  if (azimuth_angles.size() == 0)
-    azimuth_angles_calculation_flag = false;
+  // calculate azimuth angles
+  bool azimuth_angles_calculation_flag = false;
+  if (this->azimuth_angles.size() == 0)
+    azimuth_angles_calculation_flag = true;
 
   for (uint32_t j = 0; j < this->height; j++)
   {
     for (uint32_t i = 0; i < this->width; i++, ++iter_image)
     {
-
       pcl::PointXYZI point = pcl_pointcloud->at(j, this->width - i - 1);
 
       this->point_cloud_image_.at<float>(j, i)
         = sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
 
-      if (!azimuth_angles_calculation_flag)
-        azimuth_angles.push_back(-atan2(point.y,point.x));
+      if (azimuth_angles_calculation_flag && j == 0)
+        this->azimuth_angles.push_back(-atan2(point.y,point.x));
 
       if (isnan(*iter_image))
         *iter_image = 100000.0;
@@ -671,19 +690,14 @@ void NpsGazeboRosMultibeamSonarRay::ComputeCorrector()
 {
   double hFOV = this->parentSensor->HorzFOV();
   double hPixelSize = hFOV / (this->width-1);
-  // double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
   // Beam culling correction precalculation
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
-    // float beam_azimuthAngle = atan2(static_cast<double>(beam) -
-    //                     0.5 * static_cast<double>(width), fl);
     for (size_t beam_other = 0; beam_other < nBeams; beam_other ++)
     {
-      // float beam_azimuthAngle_other = atan2(static_cast<double>(beam_other) -
-      //                   0.5 * static_cast<double>(width), fl);
       float azimuthBeamPattern =
         unnormalized_sinc(M_PI * 0.884 / hPixelSize
-        * sin(azimuth_angles[beam]-azimuth_angles[beam_other]));
+        * sin(this->azimuth_angles[beam]-this->azimuth_angles[beam_other]));
       this->beamCorrector[beam][beam_other] = abs(azimuthBeamPattern);
       this->beamCorrectorSum += pow(azimuthBeamPattern, 2);
     }
