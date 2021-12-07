@@ -92,6 +92,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   this->parentSensor =
     std::dynamic_pointer_cast<sensors::DepthCameraSensor>(_parent);
   this->depthCamera = this->parentSensor->DepthCamera();
+  this->world = physics::get_world(parentSensor->WorldName());
 
   if (!this->parentSensor)
   {
@@ -217,6 +218,11 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   else
     this->constMu =
       _sdf->GetElement("constantReflectivity")->Get<bool>();
+  if (!_sdf->HasElement("customSDFTagReflectivity"))
+    this->customTag = false;
+  else
+    this->customTag =
+      _sdf->GetElement("customSDFTagReflectivity")->Get<bool>();
   if (!_sdf->HasElement("raySkips"))
     this->raySkips = 10;
   else
@@ -239,16 +245,33 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   // Read the variational reflectivity database file path from the SDF file
   if (!this->constMu)
   {
-    if (!_sdf->HasElement("reflectivityDatabaseFile"))
+    if (!this->customTag)
     {
-      this->reflectivityDatabaseFileName = "variationalReflectivityDatabase.csv";
+      if (!_sdf->HasElement("reflectivityDatabaseFile"))
+      {
+        this->reflectivityDatabaseFileName = "variationalReflectivityDatabase.csv";
+      }
+      else
+      {
+        this->reflectivityDatabaseFileName =
+          _sdf->GetElement("reflectivityDatabaseFile")->Get<std::string>();
+        GZ_ASSERT(!this->reflectivityDatabaseFileName.empty(),
+          "Empty variational reflectivity database file name");
+      }
     }
     else
     {
-      this->reflectivityDatabaseFileName =
-        _sdf->GetElement("reflectivityDatabaseFile")->Get<std::string>();
-      GZ_ASSERT(!this->reflectivityDatabaseFileName.empty(),
-        "Empty variational reflectivity database file name");
+      if (!_sdf->HasElement("customSDFTagDatabaseFile"))
+      {
+        this->customTagDatabaseFileName = "customSDFTagDatabase.csv";
+      }
+      else
+      {
+        this->customTagDatabaseFileName =
+          _sdf->GetElement("customSDFTagDatabaseFile")->Get<std::string>();
+        GZ_ASSERT(!this->customTagDatabaseFileName.empty(),
+          "Empty custom SDF Tag database file name");
+      }
     }
   }
 
@@ -257,10 +280,16 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   this->reflectivityDatabaseFilePath =
     ros::package::getPath("nps_uw_multibeam_sonar")
         + "/worlds/" + this->reflectivityDatabaseFileName;
+  this->customTagDatabaseFilePath =
+    ros::package::getPath("nps_uw_multibeam_sonar")
+        + "/worlds/" + this->customTagDatabaseFileName;
 
   // Read csv file
   std::ifstream csvFile; std::string line;
-  csvFile.open(this->reflectivityDatabaseFilePath);
+  if (!this->customTag)
+    csvFile.open(this->reflectivityDatabaseFilePath);
+  else
+    csvFile.open(this->customTagDatabaseFilePath);
   // skip the 3 lines
   getline(csvFile, line); getline(csvFile, line); getline(csvFile, line);
   while (getline(csvFile, line))
@@ -279,6 +308,20 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
       }
       this->objectNames.push_back(row[0]);
       this->reflectivities.push_back(stof(row[1], &sz));
+  }
+
+  // Read coefficient for Biofouling and roughness
+  if (this->customTag)
+  {
+    for (int k=0; k<objectNames.size(); k++)
+    {
+      ROS_INFO_STREAM(objectNames[k]);
+      ROS_INFO_STREAM(reflectivities[k]);
+      if (objectNames[k] == "biofouling_rating")
+        this->biofouling_rating_coeff = reflectivities[k];
+      if (objectNames[k] == "roughness")
+        this->roughness_coeff = reflectivities[k];
+    }
   }
 
   // From FiducialCameraPlugin
@@ -349,6 +392,17 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   ROS_INFO_STREAM("Calculation skips (Elevation) = "
       << this->raySkips);
   ROS_INFO_STREAM("# of Time data / Beam = " << this->nFreq);
+  if (!this->constMu)
+  {
+    if (!this->customTag)
+      ROS_INFO_STREAM("Reflectivity method : Variational (based on custon SDF tag)");
+    else
+      ROS_INFO_STREAM("Reflectivity method : Variational (based on model name)");
+  }
+  else
+  {
+      ROS_INFO_STREAM("Reflectivity method : Constant");
+  }
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("");
 
@@ -688,10 +742,41 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
               fd.id = vis->Name();
               fd.pt = pt;
 
+              // this->world;
+
+
               // Assign variational reflectivity
-              for (int k=0; k<objectNames.size(); k++)
-                if (vis->Name() == objectNames[k])
-                  reflectivity_image.at<float>(j, i) = reflectivities[k];
+              if (!this->customTag)
+              {
+                for (int k=0; k<objectNames.size(); k++)
+                  if (vis->Name() == objectNames[k])
+                    reflectivity_image.at<float>(j, i) = reflectivities[k];
+              }
+              else
+              {
+                // Read custom tags for surface properties
+                sdf::ElementPtr modelElt =
+                  this->world->BaseByName(vis->Name())->GetSDF();
+
+                int biofoulingRating = 0; // Biofouling rating, [0, 100]
+                if (modelElt->HasElement("surface_props:biofouling_rating"))
+                  biofoulingRating = modelElt->Get<int>("surface_props:biofouling_rating");
+
+                double roughness = 0.0; // Surface roughness, [0.0, 1.0]
+                if (modelElt->HasElement("surface_props:roughness"))
+                  roughness = modelElt->Get<double>("surface_props:roughness");
+
+                std::string material = "default"; // Surface material
+                if (modelElt->HasElement("surface_props:material"))
+                  material = modelElt->Get<std::string>("surface_props:material");
+
+                for (int k=0; k<objectNames.size(); k++)
+                  if (material == objectNames[k])
+                    reflectivity_image.at<float>(j, i) =
+                      reflectivities[k] * (1.0/(roughness + 1)) / this->roughness_coeff
+                      * (1.0/(biofoulingRating + 1)) / this->biofouling_rating_coeff;
+
+              }
               // results.push_back(fd);  // Redundant
             }
           }
