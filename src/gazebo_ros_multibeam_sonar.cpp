@@ -315,8 +315,6 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   {
     for (int k=0; k<objectNames.size(); k++)
     {
-      ROS_INFO_STREAM(objectNames[k]);
-      ROS_INFO_STREAM(reflectivities[k]);
       if (objectNames[k] == "biofouling_rating")
         this->biofouling_rating_coeff = reflectivities[k];
       if (objectNames[k] == "roughness")
