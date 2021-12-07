@@ -1,0 +1,8 @@
+﻿# Information
+Information about this data can be written here (in one line without comma)
+# Property and values (biofouling_rating and roughness values are coefficients being multiplied)
+biofouling_rating,20.0
+roughness,5.0
+default,0.001
+metal,0.005
+rubber,0.0001
