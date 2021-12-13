@@ -217,6 +217,11 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   else
     this->constMu =
       _sdf->GetElement("constantReflectivity")->Get<bool>();
+  if (!_sdf->HasElement("artificialVehicleVibration"))
+    this->artificialVehicleVibration = false;
+  else
+    this->artificialVehicleVibration =
+      _sdf->GetElement("artificialVehicleVibration")->Get<bool>();
   if (!_sdf->HasElement("raySkips"))
     this->raySkips = 10;
   else
@@ -599,31 +604,31 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
     }
   }
 
+  // Calculate only if the maxDepth from depth camera is changed and stabled
+  double min; cv::minMaxLoc(this->point_cloud_image_, &min, &this->maxDepth);
+  if (this->maxDepth == this->maxDepth_before
+      && this->maxDepth == this->maxDepth_beforebefore
+      && this->calculateReflectivity == false
+      && this->maxDepth != this->maxDepth_prev)
+  {
+    this->calculateReflectivity = true;
+    this->maxDepth_prev = this->maxDepth;
+
+    // Regenerate rand image
+    uint64 randN = static_cast<uint64>(std::rand());
+    cv::theRNG().state = randN;
+    cv::RNG rng = cv::theRNG();
+    rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.f);
+  }
+  else
+    this->calculateReflectivity = false;
+
+  this->maxDepth_beforebefore = this->maxDepth_before;
+  this->maxDepth_before = this->maxDepth;
+
   // For variational reflectivity
   if (!this->constMu)
   {
-    // Calculate only if the maxDepth from depth camera is changed and stabled
-    double min; cv::minMaxLoc(this->point_cloud_image_, &min, &this->maxDepth);
-    if (this->maxDepth == this->maxDepth_before
-        && this->maxDepth == this->maxDepth_beforebefore
-        && this->calculateReflectivity == false
-        && this->maxDepth != this->maxDepth_prev)
-    {
-      this->calculateReflectivity = true;
-      this->maxDepth_prev = this->maxDepth;
-
-      // Regenerate reand image
-      uint64 randN = static_cast<uint64>(std::rand());
-      cv::theRNG().state = randN;
-      cv::RNG rng = cv::theRNG();
-      rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.f);
-    }
-    else
-      this->calculateReflectivity = false;
-
-    this->maxDepth_beforebefore = this->maxDepth_before;
-    this->maxDepth_before = this->maxDepth;
-
     if (calculateReflectivity)
     {
       // Generate reflectivity opencv image palette
@@ -722,6 +727,16 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   // Default value for reflectivity
   if (this->reflectivityImage.rows == 0)
     this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
+
+  // If artifical vehicle vibration flag is on
+  if (this->artificialVehicleVibration)
+  {
+    // Regenerate rand image
+    uint64 randN = static_cast<uint64>(std::rand());
+    cv::theRNG().state = randN;
+    cv::RNG rng = cv::theRNG();
+    rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.f);
+  }
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();

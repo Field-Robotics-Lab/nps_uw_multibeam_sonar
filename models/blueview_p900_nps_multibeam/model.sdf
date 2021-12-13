@@ -71,6 +71,7 @@
           <writeLog>false</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
+          <artificialVehicleVibration>false</artificialVehicleVibration>
           <!-- This name is prepended to ROS topics -->
           <cameraName>blueview_p900</cameraName>
           <!-- ROS publication topics -->
