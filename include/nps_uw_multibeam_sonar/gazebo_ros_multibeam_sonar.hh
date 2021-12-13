@@ -150,6 +150,7 @@ namespace gazebo
     private: double maxDepth, maxDepth_before, maxDepth_beforebefore;
     private: double maxDepth_prev;
     private: bool calculateReflectivity;
+    private: bool artificialVehicleVibration;
     private: cv::Mat reflectivityImage;
     private: float* rangeVector;
     private: float* window;
