@@ -170,6 +170,7 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
                                   int raySkips,
                                   float sonarFreq, float delta_f,
                                   int nFreq, float bandwidth,
+                                  float maxDistance,
                                   float attenuation,
                                   float area_scaler)
 {
@@ -226,6 +227,10 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
         thrust::complex<float>(1.0 / pow(distance, 2.0) * exp(-2.0 * attenuation * distance), 0.0);
     thrust::complex<float> amplitude = randomAmps * thrust::complex<float>(sourceTerm, 0.0)
                                      * propagationTerm * beamPattern * lambert_sqrt * targetArea_sqrt;
+
+    // Max distance cut-off
+    if (distance > maxDistance)
+      amplitude = thrust::complex<float>(0.0, 0.0);
 
     // Summation of Echo returned from a signal (frequency domain)
     for (size_t f = 0; f < nFreq; f++)
@@ -320,8 +325,7 @@ namespace NpsGazeboSonar
     // ---------   Calculation parameters   --------- //
     const float max_distance = maxDistance;
     // Signal
-    const float max_T = max_distance * 2.0 / soundSpeed;
-    const float delta_f = 1.0 / max_T;
+    const float delta_f = bandwidth/nFreq;
     // Precalculation
     const float area_scaler = ray_azimuthAngleWidth * ray_elevationAngleWidth;
     const float sourceLevel = (float)_sourceLevel;                     // db re 1 muPa;
@@ -393,6 +397,7 @@ namespace NpsGazeboSonar
                                        raySkips,
                                        sonarFreq, delta_f,
                                        nFreq, bandwidth,
+                                       max_distance,
                                        attenuation,
                                        area_scaler);
 
