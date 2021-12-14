@@ -1,0 +1,100 @@
+<?xml version="1.0" ?>
+<sdf version="1.6" xmlns:surface_props="https://github.com/Field-Robotics-Lab/dave">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <gui>
+      <camera name='user_camera'>
+        <pose>3.09 1.4 2.88 0 0.75 3.1</pose>
+      </camera>
+    </gui>
+
+    <!-- basement tank -->
+    <!-- <include>
+      <uri>model://basement_tank</uri>
+      <pose>0 -3.0 0 0 0 0</pose>
+      <static>true</static>
+    </include> -->
+
+    <model name="coke_distorted">
+      <!-- To get model to show up in empty world without ground plane -->
+      <static>true</static>
+      <pose>2.3 2.0 2.0 0 0 0</pose>
+      <link name="coke_link">
+        <visual name="coke_visual">
+          <geometry>
+            <mesh>
+              <scale>2.0 2.0 2.0</scale>
+              <uri>file://Coke_Can/coke_can_distort.obj</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <!-- Custom SDF elements for surface properties -->
+      <surface_props:material>metal</surface_props:material>
+      <surface_props:biofouling_rating>10</surface_props:biofouling_rating>
+      <surface_props:roughness>0.1</surface_props:roughness>
+      <!-- <plugin name="custom_surface_properties"
+        filename="libcustom_surface_properties.so"/> -->
+    </model>
+
+    <model name="coke_rubber">
+      <!-- To get model to show up in empty world without ground plane -->
+      <static>true</static>
+      <pose>2.1 2.0 2.0 0 0 0</pose>
+      <link name="coke_link">
+        <visual name="coke_visual">
+          <geometry>
+            <mesh>
+              <scale>2.0 2.0 2.0</scale>
+              <uri>file://Coke_Can/coke_rubber.obj</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <!-- Custom SDF elements for surface properties -->
+      <surface_props:material>rubber</surface_props:material>
+      <surface_props:biofouling_rating>0</surface_props:biofouling_rating>
+      <surface_props:roughness>0.0</surface_props:roughness>
+      <!-- <plugin name="custom_surface_properties"
+        filename="libcustom_surface_properties.so"/> -->
+    </model>
+
+    <model name="coke_normal">
+      <!-- To get model to show up in empty world without ground plane -->
+      <static>true</static>
+      <pose>1.9 2.0 2.0 0 0 0</pose>
+      <link name="coke_link">
+        <visual name="coke_visual">
+          <geometry>
+            <mesh>
+              <scale>2.0 2.0 2.0</scale>
+              <uri>file://Coke_Can/coke_can.obj</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+      <!-- Custom SDF elements for surface properties -->
+      <surface_props:material>metal</surface_props:material>
+      <surface_props:biofouling_rating>0</surface_props:biofouling_rating>
+      <surface_props:roughness>0.0</surface_props:roughness>
+      <!-- <plugin name="custom_surface_properties"
+        filename="libcustom_surface_properties.so"/> -->
+    </model>
+
+    <!-- Blueview P900 -->
+    <include>
+      <uri>model://oculus_m1200d_nps_multibeam</uri>
+      <name>blueview_p900</name>
+      <pose>2.1 1.0 2.0 0 0 1.5709</pose>
+      <static>true</static>
+    </include>
+
+  </world>
+</sdf>
+
