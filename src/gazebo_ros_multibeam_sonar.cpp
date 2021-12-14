@@ -857,8 +857,11 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   {
     for (size_t beam = 0; beam < nBeams; beam ++)
     {
-      Intensity[beam][f] = static_cast<int>(this->sensorGain * abs(P_Beams[beam][f]));
-      uchar counts = static_cast<uchar>(std::min(UCHAR_MAX, Intensity[beam][f]));
+      // Serialize beams in reverse order to flip the data left to right
+      const size_t beam_idx = nBeams-beam-1;
+      Intensity[beam_idx][f] = static_cast<int>(this->sensorGain * abs(P_Beams[beam_idx][f]));
+      uchar counts = static_cast<uchar>(std::min(UCHAR_MAX, Intensity[beam_idx][f]));
+
       intensities.push_back(counts);
     }
   }
