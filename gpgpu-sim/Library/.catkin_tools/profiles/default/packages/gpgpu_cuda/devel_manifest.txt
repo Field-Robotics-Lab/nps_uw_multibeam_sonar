@@ -1,0 +1,6 @@
+gpgpu_cuda
+/home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/.private/gpgpu_cuda/cmake.lock /home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/./cmake.lock
+/home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/.private/gpgpu_cuda/lib/libgpgpu_test_lib.so /home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/lib/libgpgpu_test_lib.so
+/home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/.private/gpgpu_cuda/lib/pkgconfig/gpgpu_cuda.pc /home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/lib/pkgconfig/gpgpu_cuda.pc
+/home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/.private/gpgpu_cuda/share/gpgpu_cuda/cmake/gpgpu_cudaConfig-version.cmake /home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/share/gpgpu_cuda/cmake/gpgpu_cudaConfig-version.cmake
+/home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/.private/gpgpu_cuda/share/gpgpu_cuda/cmake/gpgpu_cudaConfig.cmake /home/gpgpu-sim/GPGPU/GPGPU_SIM_NOETIC/Library/devel/share/gpgpu_cuda/cmake/gpgpu_cudaConfig.cmake
