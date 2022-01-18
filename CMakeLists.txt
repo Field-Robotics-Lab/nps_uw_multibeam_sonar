@@ -11,7 +11,7 @@ if(NOT "${CMAKE_VERSION}" VERSION_LESS "3.16")
     set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 else()
-    add_compile_options(-std=c++11)
+    add_compile_options(-std=c++17)
 endif()
 
 find_package(catkin REQUIRED COMPONENTS

@@ -137,19 +137,26 @@ namespace gazebo
     private: double maxDistance;
     private: double sourceLevel;
     private: bool constMu;
+    private: bool customTag;
     private: double absorption;
     private: double attenuation;
     private: double verticalFOV;
     // constant reflectivity
     private: double mu;
     // variational reflectivity
+    private: physics::WorldPtr world;
     private: std::string reflectivityDatabaseFileName;
     private: std::string reflectivityDatabaseFilePath;
+    private: std::string customTagDatabaseFileName;
+    private: std::string customTagDatabaseFilePath;
     private: std::vector<std::string> objectNames;
     private: std::vector<float> reflectivities;
+    private: double biofouling_rating_coeff;
+    private: double roughness_coeff;
     private: double maxDepth, maxDepth_before, maxDepth_beforebefore;
     private: double maxDepth_prev;
     private: bool calculateReflectivity;
+    private: bool artificialVehicleVibration;
     private: cv::Mat reflectivityImage;
     private: float* rangeVector;
     private: float* window;

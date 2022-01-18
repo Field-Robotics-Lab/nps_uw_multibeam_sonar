@@ -61,10 +61,15 @@
           <bandwidth>265.5e3</bandwidth>
           <soundSpeed>1500</soundSpeed>
           <sourceLevel>150</sourceLevel>
-          <maxDistance>2</maxDistance>
+          <maxDistance>1.5</maxDistance>
           <constantReflectivity>false</constantReflectivity>
+          <!-- custom SDF Tag works when constantReflectivity is false -->
+          <customSDFTagReflectivity>true</customSDFTagReflectivity>
           <!-- The CSV databsefile is located at the worlds folder -->
-          <reflectivityDatabaseFile>variationalReflectivityDatabase_APL.csv</reflectivityDatabaseFile>
+          <customSDFTagDatabaseFile>customSDFTagDatabase.csv</customSDFTagDatabaseFile>
+          <!-- reflectivity database (by model name) works -->
+          <!-- when both constantReflectivity and customSDFTagReflectivity are false -->
+          <reflectivityDatabaseFile>variationalReflectivityDatabase.csv</reflectivityDatabaseFile>
           <raySkips>0</raySkips>
           <sensorGain>1</sensorGain>
           <plotScaler>5</plotScaler>
