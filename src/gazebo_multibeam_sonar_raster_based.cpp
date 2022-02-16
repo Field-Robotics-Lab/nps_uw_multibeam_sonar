@@ -380,11 +380,14 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   this->nRays = this->height;
   this->ray_nElevationRays = this->height;
   this->ray_nAzimuthRays = 1;
+  this->elevation_angles = new float[this->nRays];
 
   // Print sonar calculation settings
   ROS_INFO_STREAM("");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("============   SONAR PLUGIN LOADED   =============");
+  ROS_INFO_STREAM("==================================================");
+  ROS_INFO_STREAM("============      RASTER VERSION     =============");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("Maximum view range  [m] = " << this->maxDistance);
   ROS_INFO_STREAM("Distance resolution [m] = " <<
@@ -837,6 +840,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                   hPixelSize,    // _beam_azimuthAngleWidth
                   verticalFOV/180*M_PI,  // _beam_elevationAngleWidth
                   hPixelSize,    // _ray_azimuthAngleWidth
+                  this->elevation_angles, // _ray_elevationAngles
                   vPixelSize*(raySkips+1),  // _ray_elevationAngleWidth
                   this->soundSpeed,    // _soundSpeed
                   this->maxDistance,   // _maxDistance
@@ -924,9 +928,6 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
     azimuth_angles.push_back(atan2(static_cast<double>(beam) -
                     0.5 * static_cast<double>(width), fl));
   this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
-  // std::vector<float> elevation_angles;
-  // elevation_angles.push_back(vFOV / 2.0);  // 1D in elevation
-  // this->sonar_image_raw_msg_.elevation_angles = elevation_angles;
   std::vector<float> ranges;
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
@@ -1113,6 +1114,8 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
                         0.5 * static_cast<double>(this->height), fl);
     else
       elevation = 0.0;
+
+    this->elevation_angles[j] = static_cast<float>(elevation);
 
     for (uint32_t i = 0; i < this->width;
          i++, ++iter_x, ++iter_y, ++iter_z, ++iter_rgb, ++iter_image)

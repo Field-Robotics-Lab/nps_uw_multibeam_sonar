@@ -70,7 +70,6 @@
 
     <gui fullscreen='0'>
       <camera name='user_camera'>
-<!--    <pose frame=''>34.6042 32.2383 -20.6633 0 0.528384 1.41245</pose> -->
         <pose frame=''>14.2 -4.17 -89.0 0.0 0.7 2.2</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
@@ -79,8 +78,8 @@
 
     <!-- Blueview P900 -->
     <include>
-      <uri>model://blueview_p900_nps_multibeam_ray</uri>
-      <name>blueview_p900_ray</name>
+      <uri>model://blueview_p900_nps_multibeam</uri>
+      <name>blueview_p900_raster</name>
       <pose>6 0 -94 0.0 0.15 0</pose>
       <static>true</static>
     </include>
@@ -91,16 +90,19 @@
       <name>cylinder_target1</name>
       <pose>10 0 -94 0 1.5709 0</pose>
     </include>
+
     <include>
       <uri>model://cylinder_target</uri>
       <name>cylinder_target2</name>
       <pose>12 1 -94 0 0 0</pose>
     </include>
+
     <include>
       <uri>model://cylinder_target</uri>
       <name>cylinder_target3</name>
       <pose>11 -1 -94 0 1.5709 0</pose>
     </include>
+
     <include>
       <uri>model://cylinder_target</uri>
       <name>cylinder_target4</name>
@@ -118,8 +120,6 @@
       <name>glider_slocum</name>
       <pose>14 0 -93 0 0.2 0</pose>
     </include>
-
-
 
     <plugin name="sc_interface" filename="libuuv_sc_ros_interface_plugin.so"/>
 

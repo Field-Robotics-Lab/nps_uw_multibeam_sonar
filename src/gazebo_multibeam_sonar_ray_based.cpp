@@ -213,11 +213,14 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   this->nRays = this->height;
   this->ray_nElevationRays = this->height;
   this->ray_nAzimuthRays = 1;
+  this->elevation_angles = new float[this->nRays];
 
   // Print sonar calculation settings
   ROS_INFO_STREAM("");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("============   SONAR PLUGIN LOADED   =============");
+  ROS_INFO_STREAM("==================================================");
+  ROS_INFO_STREAM("============       RAY VERSION       =============");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("Maximum view range  [m] = " << this->maxDistance);
   ROS_INFO_STREAM("Distance resolution [m] = " <<
@@ -258,7 +261,6 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
     }
   }
 
-  ROS_INFO_STREAM("========================1==========================");
   // Get debug flag for computation time display
   if (!_sdf->HasElement("debugFlag"))
     this->debugFlag = false;
@@ -272,9 +274,8 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   uint64 randN = static_cast<uint64>(std::rand());
   cv::theRNG().state = randN;
   cv::RNG rng = cv::theRNG();
-  rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.0f);
+  rng.fill(this->rand_image, cv::RNG::NORMAL, 0.0f, 1.0f);
 
-  ROS_INFO_STREAM("====================2==============================");
   // Hamming window
   this->window = new float[this->nFreq];
   float windowSum = 0;
@@ -286,19 +287,16 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   for (size_t f = 0; f < this->nFreq; f++)
     this->window[f] = this->window[f]/sqrt(windowSum);
 
-  ROS_INFO_STREAM("======================3============================");
   // Sonar corrector preallocation
   this->beamCorrector = new float*[nBeams];
   for (int i = 0; i < nBeams; i++)
       this->beamCorrector[i] = new float[nBeams];
   this->beamCorrectorSum = 0.0;
 
-  ROS_INFO_STREAM("=====================4=============================");
   this->load_connection_ =
     GazeboRosCameraUtils::OnLoad(
             boost::bind(&NpsGazeboRosMultibeamSonarRay::Advertise, this));
   GazeboRosCameraUtils::Load(_sensor, _sdf);
-  ROS_INFO_STREAM("======================initiated============================");
 }
 
 void NpsGazeboRosMultibeamSonarRay::pointCloudSubThread()
@@ -408,8 +406,6 @@ void NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame(const float *_image,
 void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 {
   this->lock_.lock();
-
-  ROS_INFO_STREAM("=======================5===========================");
   cv::Mat depth_image = this->point_cloud_image_;
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
   double vFOV = this->parentSensor->VertFOV();
@@ -420,15 +416,10 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   if (this->beamCorrectorSum == 0)
     ComputeCorrector();
 
-  ROS_INFO_STREAM("========================5========1==================");
-  ROS_INFO_STREAM(width);
-  ROS_INFO_STREAM(height);
-
   // Default value for reflectivity
   if (this->reflectivityImage.rows == 0)
     this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
 
-  ROS_INFO_STREAM("========================6==========================");
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
   // ------------------------------------------------//
@@ -445,6 +436,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
                   hPixelSize,    // _beam_azimuthAngleWidth
                   verticalFOV/180*M_PI,  // _beam_elevationAngleWidth
                   hPixelSize,    // _ray_azimuthAngleWidth
+                  this->elevation_angles, // _ray_elevationAngles
                   vPixelSize*(raySkips+1),  // _ray_elevationAngleWidth
                   this->soundSpeed,    // _soundSpeed
                   this->maxDistance,   // _maxDistance
@@ -462,7 +454,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
                   this->beamCorrectorSum,   // _beamCorrectorSum
                   this->debugFlag);
 
-  ROS_INFO_STREAM("=======================7===========================");
   // For calc time measure
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<
@@ -473,11 +464,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
                     duration.count()/10000 << "/100 [s]\n");
   }
 
-  // Gaussian noise
-  // double whiteNoise = ignition::math::Rand::DblNormal(0.0, 0.7);
-      // ROS_INFO_STREAM(Intensity[beam][f]);
-
-  ROS_INFO_STREAM("=======================8===========================");
   // CSV log write stream
   // Each cols corresponds to each beams
   if (this->writeLogFlag)
@@ -532,7 +518,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
       this->writeNumber = this->writeNumber + 1;
     }
   }
-  ROS_INFO_STREAM("======================9============================");
 
   // Sonar image ROS msg
   this->sonar_image_raw_msg_.header.frame_id
@@ -566,7 +551,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   this->sonar_image_raw_msg_.intensities = intensities;
   this->sonar_image_raw_pub_.publish(this->sonar_image_raw_msg_);
 
-  ROS_INFO_STREAM("======================10============================");
   // Construct visual sonar image for rqt plot in sensor::image msg format
   cv_bridge::CvImage img_bridge;
 
@@ -581,7 +565,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
                          Intensity_image.size().height);
   const float binThickness = 2 * ceil(radius / nEffectiveRanges);
 
-  ROS_INFO_STREAM("======================11============================");
   struct BearingEntry
   {
     float begin, center, end;
@@ -590,7 +573,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
         {;}
   };
 
-  ROS_INFO_STREAM("=======================12===========================");
   std::vector<BearingEntry> angles;
   angles.reserve(nBeams);
 
@@ -616,7 +598,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
     angles.push_back(BearingEntry(begin, center, end));
   }
 
-  ROS_INFO_STREAM("======================13============================");
   const float ThetaShift = 1.5*M_PI;
   for ( int r = 0; r < ranges.size(); ++r )
   {
@@ -636,7 +617,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
     }
   }
 
-  ROS_INFO_STREAM("======================14============================");
   // Publish final sonar image
   this->sonar_image_msg_.header.frame_id
         = this->frame_name_;
@@ -678,8 +658,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointCloud2ConstPtr& _msg)
 {
   this->lock_.lock();
-  ROS_INFO_STREAM("=================start pt gen=================================");
-
   this->point_cloud_image_.create(this->height, this->width, CV_32FC1);
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
@@ -687,13 +665,19 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
   cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
   double hFOV = this->parentSensor->HorzFOV();
 
-  // calculate azimuth angles
-  bool azimuth_angles_calculation_flag = false;
+  // calculate azimuth/elevation angles
+  bool angles_calculation_flag = false;
   if (this->azimuth_angles.size() == 0)
-    azimuth_angles_calculation_flag = true;
+    angles_calculation_flag = true;
 
   for (uint32_t j = 0; j < this->height; j++)
   {
+    if (angles_calculation_flag)
+    {
+      pcl::PointXYZI point_forEle = pcl_pointcloud->at(j, 0);
+      this->elevation_angles[j] = atan2(point_forEle.z, point_forEle.x);
+    }
+
     for (uint32_t i = 0; i < this->width; i++, ++iter_image)
     {
       pcl::PointXYZI point = pcl_pointcloud->at(j, this->width - i - 1);
@@ -701,18 +685,16 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
       this->point_cloud_image_.at<float>(j, i)
         = sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
 
-      if (azimuth_angles_calculation_flag && j == 0)
-        this->azimuth_angles.push_back(-atan2(point.y,point.x));
+      if (angles_calculation_flag && j == 0)
+        this->azimuth_angles.push_back(-atan2(point.y, point.x));
 
       if (isnan(*iter_image))
         *iter_image = 100000.0;
     }
   }
 
-  ROS_INFO_STREAM("==============end pt gen====================================");
   if (this->point_cloud_connect_count_ > 0)
     this->point_cloud_pub_.publish(this->point_cloud_msg_);
-
 
   this->lock_.unlock();
 }

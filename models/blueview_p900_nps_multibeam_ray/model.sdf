@@ -35,18 +35,7 @@
       <sensor name="ray_sonar" type="gpu_ray">
         <visualize>false</visualize>
         <always_on>true</always_on>
-        <update_rate>10</update_rate>
-
-        <plugin name="ray_sonar_sensor" filename="libgazebo_ros_velodyne_gpu_laser.so">
-           <topicName>multibeam_sonar_point_cloud</topicName>
-           <static_reference_frame>forward_sonar_optical_link</static_reference_frame>
-           <organize_cloud>true</organize_cloud>
-           <min_intensity>0</min_intensity>
-           <min_range>0.2</min_range>
-           <max_range>10</max_range>
-           <gaussianNoise>0.0</gaussianNoise>
-           <gpu>true</gpu>
-        </plugin>
+        <update_rate>20</update_rate>
 
         <ray>
           <scan>
@@ -54,7 +43,7 @@
             <!-- 512 beams with 90 degrees horizontal FOV (M900-90) -->
             <horizontal>
               <samples>512</samples>
-              <!-- <resolution>1</resolution> -->
+              <resolution>1</resolution>
               <min_angle>-0.78539816339</min_angle>
               <max_angle>0.78539816339</max_angle>
             </horizontal>
@@ -62,13 +51,14 @@
             <!-- Approx 2 times the spec sheet (sepc: 20 deg.) -->
             <vertical>
               <samples>500</samples>
-              <!-- <resolution>1</resolution> -->
+              <resolution>1</resolution>
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>
             </vertical>
           </scan>
           <range>
-            <min>0.20</min>
+            <!-- min range is a collision range no need to change-->
+            <min>0.1</min>
             <max>10.0</max>
             <resolution>0.1</resolution>
           </range>
@@ -82,10 +72,15 @@
             <stddev>0.0</stddev>
           </noise>
         </ray>
-        <!-- <plugin filename="libgazebo_ros_gpu_laser.so" name="forward_sonar_scan">
-          <topicName>/laser/scan</topicName>
-          <frameName>forward_sonar_optical_link</frameName>
-        </plugin> -->
+
+        <plugin name="ray_sonar_sensor" filename="libgazebo_ros_velodyne_gpu_laser.so">
+           <topicName>multibeam_sonar_point_cloud</topicName>
+           <static_reference_frame>forward_sonar_optical_link</static_reference_frame>
+           <organize_cloud>true</organize_cloud>
+           <min_range>0.2</min_range>
+           <max_range>10.0</max_range>
+        </plugin>
+
         <plugin filename="libnps_multibeam_sonar_ray_ros_plugin.so" name="forward_sonar">
           <!-- Sonar properties -->
           <verticalFOV>20</verticalFOV>
@@ -98,11 +93,8 @@
           <sensorGain>0.02</sensorGain>
           <plotScaler>10</plotScaler>
           <writeLog>true</writeLog>
-          <debugFlag>true</debugFlag>
+          <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
-          <!-- Custom Azimuth beam angles -->
-          <customBeamAngles>true</customBeamAngles>
-          <customBeamAnglesFilePath>customBeamAngles.csv</customBeamAnglesFilePath>
           <!-- This name is prepended to ROS topics -->
           <cameraName>blueview_p900</cameraName>
           <!-- ROS publication topics -->

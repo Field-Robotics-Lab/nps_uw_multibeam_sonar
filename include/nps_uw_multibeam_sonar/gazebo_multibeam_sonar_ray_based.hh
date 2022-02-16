@@ -146,7 +146,8 @@ namespace gazebo
     private: double mu;
     private: bool calculateReflectivity;
     private: cv::Mat reflectivityImage;
-    std::vector<float> azimuth_angles;
+    private: std::vector<float> azimuth_angles;
+    private: float* elevation_angles;
     private: float* rangeVector;
     private: float* window;
     private: float** beamCorrector;

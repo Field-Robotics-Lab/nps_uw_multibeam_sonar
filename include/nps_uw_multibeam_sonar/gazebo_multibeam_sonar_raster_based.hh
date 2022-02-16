@@ -170,6 +170,7 @@ namespace gazebo
     private: int raySkips;
     private: int ray_nAzimuthRays;
     private: int ray_nElevationRays;
+    private: float* elevation_angles;
     private: float plotScaler;
     private: float sensorGain;
     protected: bool debugFlag;

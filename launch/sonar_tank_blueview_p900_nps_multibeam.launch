@@ -8,11 +8,6 @@
     <arg name="verbose" value="$(arg verbose)"/>
   </include>
 
-  <!-- Debugging visualizations -->
-  <!-- <node name="rqt_images" pkg="rqt_gui" type="rqt_gui" output="screen"
-        args = "&#45;&#45;perspective-file $(find nps_uw_multibeam_sonar)/config/sonar_tank_blueview_p900_images.perspective">
-  </node> -->
-
   <!-- rqt_image_view for image_raw_sonar -->
   <node name="rqt_image_view_sonar" pkg="rqt_image_view"
         type="rqt_image_view" args="/blueview_p900/sonar_image">

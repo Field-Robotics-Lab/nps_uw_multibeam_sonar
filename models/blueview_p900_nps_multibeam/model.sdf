@@ -69,7 +69,7 @@
           <sensorGain>0.02</sensorGain>
           <plotScaler>10</plotScaler>
           <writeLog>true</writeLog>
-          <debugFlag>true</debugFlag>
+          <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
           <artificialVehicleVibration>false</artificialVehicleVibration>
           <!-- This name is prepended to ROS topics -->
