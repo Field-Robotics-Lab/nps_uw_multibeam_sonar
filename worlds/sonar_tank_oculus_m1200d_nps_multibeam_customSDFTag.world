@@ -30,7 +30,7 @@
           <geometry>
             <mesh>
               <scale>2.0 2.0 2.0</scale>
-              <uri>file://Coke_Can/coke_can_distort.obj</uri>
+              <uri>file://coke_can_example/coke_can_distort.obj</uri>
             </mesh>
           </geometry>
         </visual>
@@ -52,7 +52,7 @@
           <geometry>
             <mesh>
               <scale>2.0 2.0 2.0</scale>
-              <uri>file://Coke_Can/coke_rubber.obj</uri>
+              <uri>file://coke_can_example/coke_rubber.obj</uri>
             </mesh>
           </geometry>
         </visual>
@@ -74,7 +74,7 @@
           <geometry>
             <mesh>
               <scale>2.0 2.0 2.0</scale>
-              <uri>file://Coke_Can/coke_can.obj</uri>
+              <uri>file://coke_can_example/coke_can.obj</uri>
             </mesh>
           </geometry>
         </visual>
@@ -97,4 +97,3 @@
 
   </world>
 </sdf>
-
