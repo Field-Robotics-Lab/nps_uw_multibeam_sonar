@@ -68,8 +68,8 @@
           <raySkips>10</raySkips>
           <sensorGain>0.02</sensorGain>
           <plotScaler>10</plotScaler>
-          <writeLog>false</writeLog>
-          <debugFlag>false</debugFlag>
+          <writeLog>true</writeLog>
+          <debugFlag>true</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
           <artificialVehicleVibration>false</artificialVehicleVibration>
           <!-- This name is prepended to ROS topics -->
@@ -107,7 +107,7 @@
         <ray>
           <scan>
             <horizontal>
-              <samples>100</samples>
+              <samples>10</samples>
               <resolution>1</resolution>
               <min_angle>-0.785398</min_angle>
               <max_angle>0.785398</max_angle>

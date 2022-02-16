@@ -61,7 +61,7 @@
             <!-- Set vertical FOV by setting image height -->
             <!-- Approx 2 times the spec sheet (sepc: 20 deg.) -->
             <vertical>
-              <samples>228</samples>
+              <samples>500</samples>
               <!-- <resolution>1</resolution> -->
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>
@@ -94,12 +94,15 @@
           <soundSpeed>1500</soundSpeed>
           <sourceLevel>220</sourceLevel>
           <maxDistance>10</maxDistance>
-          <raySkips>10</raySkips>
+          <raySkips>1</raySkips>
           <sensorGain>0.02</sensorGain>
           <plotScaler>10</plotScaler>
           <writeLog>true</writeLog>
-          <debugFlag>false</debugFlag>
+          <debugFlag>true</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
+          <!-- Custom Azimuth beam angles -->
+          <customBeamAngles>true</customBeamAngles>
+          <customBeamAnglesFilePath>customBeamAngles.csv</customBeamAnglesFilePath>
           <!-- This name is prepended to ROS topics -->
           <cameraName>blueview_p900</cameraName>
           <!-- ROS publication topics -->
@@ -135,7 +138,7 @@
         <ray>
           <scan>
             <horizontal>
-              <samples>100</samples>
+              <samples>10</samples>
               <resolution>1</resolution>
               <min_angle>-0.785398</min_angle>
               <max_angle>0.785398</max_angle>

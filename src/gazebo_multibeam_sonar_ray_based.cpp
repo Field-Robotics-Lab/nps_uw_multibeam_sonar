@@ -243,21 +243,22 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
         this->writeInterval = _sdf->Get<int>("writeFrameInterval");
       else
         this->writeInterval = 10;
-      ROS_INFO_STREAM("Raw data at " << "/tmp/SonarRawData_{numbers}.csv");
-      ROS_INFO_STREAM("every " << this->writeInterval << " frames");
-      ROS_INFO_STREAM("Also, Beam angles at /tmp/SonarRawData_beam_angles.csv");
+      ROS_INFO_STREAM("Raw data at " << "/tmp/SonarRawData_{numbers}.csv"
+                      << " every " << this->writeInterval << " frames");
+      ROS_INFO_STREAM("Beam angles at /tmp/SonarRawData_beam_angles.csv");
       ROS_INFO_STREAM("");
 
       struct stat buffer;
       std::string logfilename("/tmp/SonarRawData_000001.csv");
+      std::string logfilename_angles("/tmp/SonarRawData_beam_angles.csv");
       if (stat (logfilename.c_str(), &buffer) == 0)
-      {
         system("rm /tmp/SonarRawData*.csv");
+      if (stat (logfilename_angles.c_str(), &buffer) == 0)
         system("rm /tmp/SonarRawData_beam_angles.csv");
-      }
     }
   }
 
+  ROS_INFO_STREAM("========================1==========================");
   // Get debug flag for computation time display
   if (!_sdf->HasElement("debugFlag"))
     this->debugFlag = false;
@@ -273,6 +274,7 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   cv::RNG rng = cv::theRNG();
   rng.fill(this->rand_image, cv::RNG::NORMAL, 0.f, 1.0f);
 
+  ROS_INFO_STREAM("====================2==============================");
   // Hamming window
   this->window = new float[this->nFreq];
   float windowSum = 0;
@@ -284,16 +286,19 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   for (size_t f = 0; f < this->nFreq; f++)
     this->window[f] = this->window[f]/sqrt(windowSum);
 
+  ROS_INFO_STREAM("======================3============================");
   // Sonar corrector preallocation
   this->beamCorrector = new float*[nBeams];
   for (int i = 0; i < nBeams; i++)
       this->beamCorrector[i] = new float[nBeams];
   this->beamCorrectorSum = 0.0;
 
+  ROS_INFO_STREAM("=====================4=============================");
   this->load_connection_ =
     GazeboRosCameraUtils::OnLoad(
             boost::bind(&NpsGazeboRosMultibeamSonarRay::Advertise, this));
   GazeboRosCameraUtils::Load(_sensor, _sdf);
+  ROS_INFO_STREAM("======================initiated============================");
 }
 
 void NpsGazeboRosMultibeamSonarRay::pointCloudSubThread()
@@ -317,6 +322,14 @@ void NpsGazeboRosMultibeamSonarRay::Advertise()
   // Spin up the queue helper thread.
   this->pointCloudSubQueueThread = std::thread(std::bind(
       &NpsGazeboRosMultibeamSonarRay::pointCloudSubThread, this));
+
+  ros::AdvertiseOptions point_cloud_ao =
+    ros::AdvertiseOptions::create<sensor_msgs::PointCloud2>(
+      this->point_cloud_topic_name_, 1,
+      boost::bind(&NpsGazeboRosMultibeamSonarRay::PointCloudConnect, this),
+      boost::bind(&NpsGazeboRosMultibeamSonarRay::PointCloudDisconnect, this),
+      ros::VoidPtr(), &this->camera_queue_);
+  this->point_cloud_pub_ = this->rosnode_->advertise(point_cloud_ao);
 
   // Publisher for normal image
   ros::AdvertiseOptions normal_image_ao =
@@ -380,7 +393,7 @@ void NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame(const float *_image,
   this->sensor_update_time_ = this->parentSensor->LastMeasurementTime();
   if (this->parentSensor->IsActive())
   {
-    if (this->sonar_image_connect_count_ > 0)
+    if (this->sonar_image_connect_count_ > 0 && this->point_cloud_image_.size().width != 0)
       this->ComputeSonarImage();
   }
   else
@@ -396,6 +409,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 {
   this->lock_.lock();
 
+  ROS_INFO_STREAM("=======================5===========================");
   cv::Mat depth_image = this->point_cloud_image_;
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
   double vFOV = this->parentSensor->VertFOV();
@@ -406,10 +420,15 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   if (this->beamCorrectorSum == 0)
     ComputeCorrector();
 
+  ROS_INFO_STREAM("========================5========1==================");
+  ROS_INFO_STREAM(width);
+  ROS_INFO_STREAM(height);
+
   // Default value for reflectivity
   if (this->reflectivityImage.rows == 0)
     this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
 
+  ROS_INFO_STREAM("========================6==========================");
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
   // ------------------------------------------------//
@@ -443,6 +462,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
                   this->beamCorrectorSum,   // _beamCorrectorSum
                   this->debugFlag);
 
+  ROS_INFO_STREAM("=======================7===========================");
   // For calc time measure
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<
@@ -457,6 +477,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   // double whiteNoise = ignition::math::Rand::DblNormal(0.0, 0.7);
       // ROS_INFO_STREAM(Intensity[beam][f]);
 
+  ROS_INFO_STREAM("=======================8===========================");
   // CSV log write stream
   // Each cols corresponds to each beams
   if (this->writeLogFlag)
@@ -511,6 +532,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
       this->writeNumber = this->writeNumber + 1;
     }
   }
+  ROS_INFO_STREAM("======================9============================");
 
   // Sonar image ROS msg
   this->sonar_image_raw_msg_.header.frame_id
@@ -544,6 +566,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   this->sonar_image_raw_msg_.intensities = intensities;
   this->sonar_image_raw_pub_.publish(this->sonar_image_raw_msg_);
 
+  ROS_INFO_STREAM("======================10============================");
   // Construct visual sonar image for rqt plot in sensor::image msg format
   cv_bridge::CvImage img_bridge;
 
@@ -558,6 +581,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
                          Intensity_image.size().height);
   const float binThickness = 2 * ceil(radius / nEffectiveRanges);
 
+  ROS_INFO_STREAM("======================11============================");
   struct BearingEntry
   {
     float begin, center, end;
@@ -566,6 +590,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
         {;}
   };
 
+  ROS_INFO_STREAM("=======================12===========================");
   std::vector<BearingEntry> angles;
   angles.reserve(nBeams);
 
@@ -591,6 +616,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
     angles.push_back(BearingEntry(begin, center, end));
   }
 
+  ROS_INFO_STREAM("======================13============================");
   const float ThetaShift = 1.5*M_PI;
   for ( int r = 0; r < ranges.size(); ++r )
   {
@@ -610,6 +636,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
     }
   }
 
+  ROS_INFO_STREAM("======================14============================");
   // Publish final sonar image
   this->sonar_image_msg_.header.frame_id
         = this->frame_name_;
@@ -651,6 +678,7 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointCloud2ConstPtr& _msg)
 {
   this->lock_.lock();
+  ROS_INFO_STREAM("=================start pt gen=================================");
 
   this->point_cloud_image_.create(this->height, this->width, CV_32FC1);
 
@@ -680,6 +708,11 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
         *iter_image = 100000.0;
     }
   }
+
+  ROS_INFO_STREAM("==============end pt gen====================================");
+  if (this->point_cloud_connect_count_ > 0)
+    this->point_cloud_pub_.publish(this->point_cloud_msg_);
+
 
   this->lock_.unlock();
 }
