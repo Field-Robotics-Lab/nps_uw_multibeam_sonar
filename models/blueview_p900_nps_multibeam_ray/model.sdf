@@ -50,7 +50,7 @@
             <!-- Set vertical FOV by setting image height -->
             <!-- Approx 2 times the spec sheet (sepc: 20 deg.) -->
             <vertical>
-              <samples>500</samples>
+              <samples>100</samples>
               <resolution>1</resolution>
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>

@@ -702,6 +702,24 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
       if (this->detectAll)
         this->PopulateFiducials();
 
+      ROS_INFO_STREAM(this->fiducials.size());
+      ROS_INFO_STREAM(this->fiducials.size());
+      ROS_INFO_STREAM(this->fiducials.size());
+      ROS_INFO_STREAM(this->fiducials.size());
+      ROS_INFO_STREAM(this->fiducials.size());
+
+      for (int i=0; i<reflectivity_image.rows; i++)
+      {
+        for (int j=0; j<reflectivity_image.cols; j+=raySkips)
+        {
+          ignition::math::Vector2i pt = ignition::math::Vector2i(256, 50);
+          Ogre::Entity *entity =
+            this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
+          if (entity != 0)
+            ROS_INFO_STREAM(entity);
+        }
+      }
+
       std::vector<FiducialData> results;
       for (const auto &f : this->fiducials)
       {
@@ -747,9 +765,6 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
               FiducialData fd;
               fd.id = vis->Name();
               fd.pt = pt;
-
-              // this->world;
-
 
               // Assign variational reflectivity
               if (!this->customTag)

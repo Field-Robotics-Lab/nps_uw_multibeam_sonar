@@ -95,6 +95,22 @@ namespace gazebo
     /// \param take in SDF root element
     public: virtual void Load(sensors::SensorPtr _sensor, sdf::ElementPtr _sdf);
 
+    /// \brief Helper function to fill the list of fiducials with all models
+    /// in the world if none are specified
+    private: void PopulateFiducials();
+    // From FiducialCameraPlugin
+    /// \brief Selection buffer used for occlusion detection
+    public: std::unique_ptr<rendering::SelectionBuffer> selectionBuffer;
+
+    /// \brief Pointer to the scene.
+    public: rendering::ScenePtr scene;
+
+    /// \brief True to detect all objects in the world.
+    public: bool detectAll = false;
+
+    /// \brief A list of fiducials tracked by this camera.
+    public: std::set<std::string> fiducials;
+
     public: virtual void OnNewLaserFrame(const float *_image,
                 unsigned int _width, unsigned int _height,
                 unsigned int _depth, const std::string &_format);

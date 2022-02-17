@@ -84,6 +84,14 @@
       <static>true</static>
     </include>
 
+    <include>
+      <uri>model://plate_target</uri>
+      <name>plate</name>
+      <pose>5 -1 -92 3.15 0 0</pose>
+      <static>true</static>
+    </include>
+
+
     <!-- cylinder target -->
     <include>
       <uri>model://cylinder_target</uri>

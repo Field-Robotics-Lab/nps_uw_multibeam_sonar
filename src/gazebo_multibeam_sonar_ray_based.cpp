@@ -187,6 +187,36 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
   this->constMu = true;
   this->mu = 1e-3;  // default constant mu
 
+  ROS_INFO_STREAM("===================1=========================");
+  // From FiducialCameraPlugin
+  if (this->laserCamera)
+  {
+    this->scene = this->laserCamera->GetScene();
+  }
+  ROS_INFO_STREAM("=====================1=============1==========");
+  if (!this->laserCamera || !this->scene)
+  {
+    gzerr << "SonarDummy failed to load. "
+        << "Camera and/or Scene not found" << std::endl;
+  }
+  // load the fiducials
+  if (_sdf->HasElement("fiducial"))
+  {
+    sdf::ElementPtr elem = _sdf->GetElement("fiducial");
+    while (elem)
+    {
+      this->fiducials.insert(elem->Get<std::string>());
+      elem = elem->GetNextElement("fiducial");
+    }
+  }
+  else
+  {
+    gzmsg << "No fiducials specified. All models will be tracked."
+        << std::endl;
+    this->detectAll = true;
+  }
+  ROS_INFO_STREAM("=====================2=======================");
+
   // Transmission path properties (typical model used here)
   // More sophisticated model by Francois-Garrison model is available
   this->absorption = 0.0354;  // [dB/m]
@@ -308,6 +338,22 @@ void NpsGazeboRosMultibeamSonarRay::pointCloudSubThread()
   }
 }
 
+void NpsGazeboRosMultibeamSonarRay::PopulateFiducials()
+{
+  this->fiducials.clear();
+
+  ROS_INFO_STREAM("==================3=========================");
+  // Check all models for inclusion in the frustum.
+  rendering::VisualPtr worldVis = this->scene->WorldVisual();
+  for (unsigned int i = 0; i < worldVis->GetChildCount(); ++i)
+  {
+    rendering::VisualPtr childVis = worldVis->GetChild(i);
+    if (childVis->GetType() == rendering::Visual::VT_MODEL)
+      this->fiducials.insert(childVis->Name());
+  }
+  ROS_INFO_STREAM("===================4=========================");
+}
+
 void NpsGazeboRosMultibeamSonarRay::Advertise()
 {
   // Publisher for point cloud
@@ -419,6 +465,109 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   // Default value for reflectivity
   if (this->reflectivityImage.rows == 0)
     this->reflectivityImage = cv::Mat(width, height, CV_32FC1, cv::Scalar(this->mu));
+
+  ROS_INFO_STREAM("===================5===========1==============");
+  this->laserCamera->CreateRenderTexture();
+  if (!this->selectionBuffer)
+  {
+    std::string cameraName = this->laserCamera->OgreCamera()->getName();
+    this->selectionBuffer.reset(
+        new rendering::SelectionBuffer(cameraName,
+        this->scene->OgreSceneManager(),
+        this->laserCamera->RenderTexture()->getBuffer()->
+        getRenderTarget()));
+  }
+
+  ROS_INFO_STREAM("===================5==============2===========");
+  if (this->detectAll)
+    this->PopulateFiducials();
+
+  ROS_INFO_STREAM(this->fiducials.size());
+  ROS_INFO_STREAM(this->fiducials.size());
+  ROS_INFO_STREAM(this->fiducials.size());
+  ROS_INFO_STREAM(this->fiducials.size());
+  ROS_INFO_STREAM(this->fiducials.size());
+
+  for (int i=0; i<reflectivityImage.rows; i++)
+  {
+    for (int j=0; j<reflectivityImage.cols; j+=raySkips)
+    {
+      ignition::math::Vector2i pt = ignition::math::Vector2i(256, 50);
+      Ogre::Entity *entity =
+        this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
+      if (entity != 0)
+        ROS_INFO_STREAM(entity);
+    }
+  }
+
+
+
+  // Loop over every pixel
+  for (int i=0; i<reflectivityImage.rows; i++)
+  {
+    for (int j=0; j<reflectivityImage.cols; j+=raySkips)
+    {
+      // target pixel
+      ignition::math::Vector2i pt = ignition::math::Vector2i(i, j);
+
+
+      // use selection buffer to check if visual is occluded by other entities
+      // in the camera view
+      Ogre::Entity *entity =
+        this->selectionBuffer->OnSelectionClick(pt.X(), pt.Y());
+
+
+      rendering::VisualPtr result;
+      if (entity && !entity->getUserObjectBindings().getUserAny().isEmpty())
+      {
+        try
+        {
+          result = this->scene->GetVisual(
+              Ogre::any_cast<std::string>(
+              entity->getUserObjectBindings().getUserAny()));
+        }
+        catch(Ogre::Exception &_e)
+        {
+          gzerr << "Ogre Error:" << _e.getFullDescription() << "\n";
+          continue;
+        }
+      }
+
+      // if (result && result->GetRootVisual() == vis)
+      if (result)
+      {
+        // FiducialData fd;
+        // fd.id = vis->Name();
+        // fd.pt = pt;
+
+        ROS_INFO_STREAM(" ");
+        ROS_INFO_STREAM(i);
+        ROS_INFO_STREAM(j);
+        ROS_INFO_STREAM(result->Name());
+        ROS_INFO_STREAM(result->GetRootVisual()->Name());
+        ROS_INFO_STREAM(" ");
+      }
+    }
+  }
+
+  ROS_INFO_STREAM("===================6=========================");
+  std::vector<FiducialData> results;
+  for (const auto &f : this->fiducials)
+  {
+    // check if fiducial is visible within the frustum
+    rendering::VisualPtr vis = this->scene->GetVisual(f);
+    if (!vis)
+      continue;
+
+    if (!this->laserCamera->IsVisible(vis))
+      continue;
+  }
+  ROS_INFO_STREAM("===================7=========================");
+
+
+
+
+
 
   // For calc time measure
   auto start = std::chrono::high_resolution_clock::now();
