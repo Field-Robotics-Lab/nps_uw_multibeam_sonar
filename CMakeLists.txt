@@ -73,6 +73,6 @@ install(
 )
 
 # for launch
-install(DIRECTORY launch
+install(DIRECTORY launch worlds
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
         PATTERN "*~" EXCLUDE)

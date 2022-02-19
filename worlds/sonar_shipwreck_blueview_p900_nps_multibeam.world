@@ -1,0 +1,52 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <gui>
+      <camera name='user_camera'>
+        <pose>9.0 3.4 7.5 0.0 0.75 3.1</pose>
+      </camera>
+    </gui>
+
+    <!-- Blueview P900 -->
+    <include>
+      <uri>model://blueview_p900_nps_multibeam</uri>
+      <name>blueview_p900</name>
+      <!--pose>0 -5 2.0 0 0 1.5709</pose-->
+      <pose>0 8.5 0.3 0 0 1.5709</pose>
+      <static>true</static>
+    </include>
+
+    <!-- Undistorted shipwreck -->
+    <include>
+      <pose>10 0 0 0 0 0</pose>
+      <uri>https://fuel.ignitionrobotics.org/1.0/Cole/models/Sunken Ship</uri>
+    </include>
+
+    <!-- Distorted shipwreck -->
+    <include>
+      <pose>-10 0 0 0 0 0</pose>
+      <uri>model://sunken_ship_distorted</uri>
+    </include>
+
+    <!-- Undistorted vase -->
+    <include>
+      <pose>1 10 0 0 0 0</pose>
+      <uri>https://fuel.ignitionrobotics.org/1.0/Cole/models/Sunken Vase</uri>
+    </include>
+
+    <!-- Distorted vase -->
+    <include>
+      <pose>-1 10 0 0 0 0</pose>
+      <uri>model://sunken_vase_distorted</uri>
+    </include>
+
+  </world>
+</sdf>
+
