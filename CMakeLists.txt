@@ -18,7 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
  tf
  cv_bridge
  gazebo_plugins
- acoustic_msgs)
+ acoustic_msgs
+ xacro)
 
 find_package(gazebo REQUIRED)
 find_package(roscpp REQUIRED)
@@ -73,6 +74,6 @@ install(
 )
 
 # for launch
-install(DIRECTORY launch worlds
+install(DIRECTORY launch worlds urdf
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
         PATTERN "*~" EXCLUDE)
