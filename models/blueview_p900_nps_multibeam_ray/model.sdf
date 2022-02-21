@@ -1,9 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
   <model name="blueview_p900_ray">
-
-    <!-- <link name="world"/> -->
-
     <link name="forward_sonar_link">
       <inertial>
         <pose>0 0 0 0 0 0</pose>
