@@ -51,6 +51,7 @@ namespace NpsGazeboSonar
                                      double _beam_azimuthAngleWidth,
                                      double _beam_elevationAngleWidth,
                                      double _ray_azimuthAngleWidth,
+                                     float *_ray_elevationAngles,
                                      double _ray_elevationAngleWidth,
                                      double _soundSpeed,
                                      double _maxDistance,

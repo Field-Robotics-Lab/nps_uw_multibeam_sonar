@@ -30,7 +30,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 
-#include <nps_uw_multibeam_sonar/gazebo_ros_multibeam_sonar.hh>
+#include <nps_uw_multibeam_sonar/gazebo_multibeam_sonar_raster_based.hh>
 #include <gazebo/sensors/Sensor.hh>
 #include <sdf/sdf.hh>
 #include <gazebo/sensors/SensorTypes.hh>
@@ -380,11 +380,14 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   this->nRays = this->height;
   this->ray_nElevationRays = this->height;
   this->ray_nAzimuthRays = 1;
+  this->elevation_angles = new float[this->nRays];
 
   // Print sonar calculation settings
   ROS_INFO_STREAM("");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("============   SONAR PLUGIN LOADED   =============");
+  ROS_INFO_STREAM("==================================================");
+  ROS_INFO_STREAM("============      RASTER VERSION     =============");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("Maximum view range  [m] = " << this->maxDistance);
   ROS_INFO_STREAM("Distance resolution [m] = " <<
@@ -837,6 +840,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                   hPixelSize,    // _beam_azimuthAngleWidth
                   verticalFOV/180*M_PI,  // _beam_elevationAngleWidth
                   hPixelSize,    // _ray_azimuthAngleWidth
+                  this->elevation_angles, // _ray_elevationAngles
                   vPixelSize*(raySkips+1),  // _ray_elevationAngleWidth
                   this->soundSpeed,    // _soundSpeed
                   this->maxDistance,   // _maxDistance
@@ -922,11 +926,8 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
   for (size_t beam = 0; beam < nBeams; beam ++)
     azimuth_angles.push_back(atan2(static_cast<double>(beam) -
-                    0.5 * static_cast<double>(width-1), fl));
+                    0.5 * static_cast<double>(width), fl));
   this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
-  // std::vector<float> elevation_angles;
-  // elevation_angles.push_back(vFOV / 2.0);  // 1D in elevation
-  // this->sonar_image_raw_msg_.elevation_angles = elevation_angles;
   std::vector<float> ranges;
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
@@ -1110,9 +1111,11 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
     double elevation;
     if (this->height > 1)
       elevation = atan2(static_cast<double>(j) -
-                        0.5 * static_cast<double>(this->height-1), fl);
+                        0.5 * static_cast<double>(this->height), fl);
     else
       elevation = 0.0;
+
+    this->elevation_angles[j] = static_cast<float>(elevation);
 
     for (uint32_t i = 0; i < this->width;
          i++, ++iter_x, ++iter_y, ++iter_z, ++iter_rgb, ++iter_image)
@@ -1120,7 +1123,7 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
       double azimuth;
       if (this->width > 1)
         azimuth = atan2(static_cast<double>(i) -
-                        0.5 * static_cast<double>(this->width-1), fl);
+                        0.5 * static_cast<double>(this->width), fl);
       else
         azimuth = 0.0;
 
@@ -1188,11 +1191,11 @@ void NpsGazeboRosMultibeamSonar::ComputeCorrector()
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
     float beam_azimuthAngle = atan2(static_cast<double>(beam) -
-                        0.5 * static_cast<double>(width-1), fl);
+                        0.5 * static_cast<double>(width), fl);
     for (size_t beam_other = 0; beam_other < nBeams; beam_other ++)
     {
       float beam_azimuthAngle_other = atan2(static_cast<double>(beam_other) -
-                        0.5 * static_cast<double>(width-1), fl);
+                        0.5 * static_cast<double>(width), fl);
       float azimuthBeamPattern =
         unnormalized_sinc(M_PI * 0.884 / hPixelSize
         * sin(beam_azimuthAngle-beam_azimuthAngle_other));

@@ -30,10 +30,9 @@ for i=2:plotSkips:nBeams+1
     end
 end
 
-range_vector = Data(:,1)';
+sonarBeams = csvread("/tmp/SonarRawData_beam_angles.csv",4)';
 
-fl = nBeams / (2.0 * tan(FOV/2.0));
-sonarBeams = atan2( ((1:nBeams)-1) - 0.5 *(nBeams-1), fl);
+range_vector = Data(:,1)';
 
 x = range_vector.*cos(sonarBeams');
 y = range_vector.*sin(sonarBeams');

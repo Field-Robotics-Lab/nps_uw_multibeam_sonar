@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="verbose" default="false"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find nps_uw_multibeam_sonar)/worlds/local_search_blueview_p900_nps_multibeam_ray.world"/>
+    <arg name="verbose" value="$(arg verbose)"/>
+  </include>
+
+  <!-- rqt_image_view for image_raw_sonar -->
+  <node name="rqt_image_view_sonar" pkg="rqt_image_view"
+        type="rqt_image_view" args="/blueview_p900/sonar_image">
+  </node>
+
+  <!-- <node pkg="tf" type="static_transform_publisher" name="multibeam_sonar_base_link" args="0 0 0 0 0 0 map forward_sonar_optical_link 50" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="multibeam_sonar_base_link" args="0 0 0 0 0 0 world forward_sonar_optical_link 50" />
+
+</launch>

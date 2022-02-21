@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="blueview_p900">
+  <model name="blueview_p900_ray">
+
+    <!-- <link name="world"/> -->
+
     <link name="forward_sonar_link">
       <inertial>
         <pose>0 0 0 0 0 0</pose>
@@ -29,32 +32,56 @@
         </geometry>
       </visual>
 
-      <sensor name="image_sonar" type="depth">
-        <visualize>true</visualize>
+      <sensor name="ray_sonar" type="gpu_ray">
+        <visualize>false</visualize>
         <always_on>true</always_on>
-        <update_rate>10</update_rate>
-        <camera>
-          <!-- 90 degrees for the M900-90 -->
-          <horizontal_fov>1.57079632679</horizontal_fov>
-          <image>
-            <width>512</width>
+        <update_rate>20</update_rate>
+
+        <ray>
+          <scan>
+            <!-- Set horizontal FOV by setting image height -->
+            <!-- 512 beams with 90 degrees horizontal FOV (M900-90) -->
+            <horizontal>
+              <samples>512</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.78539816339</min_angle>
+              <max_angle>0.78539816339</max_angle>
+            </horizontal>
             <!-- Set vertical FOV by setting image height -->
             <!-- Approx 2 times the spec sheet (sepc: 20 deg.) -->
-            <height>228</height>
-            <format>R8G8B8</format>
-          </image>
-          <clip>
-            <near>0.2</near>            <!-- optimal 2m-60m -->
-            <far>60</far>
-          </clip>
-          <depth_camera>
-            <output>depths</output>
-          </depth_camera>
-          <save enabled="true">
-            <path>/tmp/camera</path>
-          </save>
-        </camera>
-        <plugin filename="libnps_multibeam_sonar_ros_plugin.so" name="forward_sonar">
+            <vertical>
+              <samples>500</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.349066</min_angle>
+              <max_angle>0.349066</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <!-- min range is a collision range no need to change-->
+            <min>0.1</min>
+            <max>10.0</max>
+            <resolution>0.1</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <!-- Noise parameters based on published spec for Hokuyo laser
+                achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+                stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+                reading. -->
+            <mean>0.0</mean>
+            <stddev>0.0</stddev>
+          </noise>
+        </ray>
+
+        <plugin name="ray_sonar_sensor" filename="libgazebo_ros_velodyne_gpu_laser.so">
+           <topicName>multibeam_sonar_point_cloud</topicName>
+           <static_reference_frame>forward_sonar_optical_link</static_reference_frame>
+           <organize_cloud>true</organize_cloud>
+           <min_range>0.2</min_range>
+           <max_range>10.0</max_range>
+        </plugin>
+
+        <plugin filename="libnps_multibeam_sonar_ray_ros_plugin.so" name="forward_sonar">
           <!-- Sonar properties -->
           <verticalFOV>20</verticalFOV>
           <sonarFreq>900e3</sonarFreq>
@@ -62,22 +89,18 @@
           <soundSpeed>1500</soundSpeed>
           <sourceLevel>220</sourceLevel>
           <maxDistance>10</maxDistance>
-          <constantReflectivity>true</constantReflectivity>
-          <!-- The CSV databsefile is located at the worlds folder -->
-          <reflectivityDatabaseFile>variationalReflectivityDatabase.csv</reflectivityDatabaseFile>
-          <raySkips>10</raySkips>
+          <raySkips>1</raySkips>
           <sensorGain>0.02</sensorGain>
           <plotScaler>10</plotScaler>
           <writeLog>true</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>
-          <artificialVehicleVibration>false</artificialVehicleVibration>
           <!-- This name is prepended to ROS topics -->
           <cameraName>blueview_p900</cameraName>
           <!-- ROS publication topics -->
           <imageTopicName>image_raw</imageTopicName>
           <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
-          <pointCloudTopicName>point_cloud</pointCloudTopicName>
+          <pointCloudTopicName>multibeam_sonar_point_cloud</pointCloudTopicName>
           <depthImageTopicName>image_depth</depthImageTopicName>
           <depthImageCameraInfoTopicName>image_depth/camera_info</depthImageCameraInfoTopicName>
           <sonarImageRawTopicName>sonar_image_raw</sonarImageRawTopicName>
@@ -133,6 +156,11 @@
       <parent>forward_sonar_link</parent>
       <child>forward_sonar_beam_visual_link</child>
     </joint>
+
+    <!-- <joint name="fixed" type="fixed">
+      <parent link="world"/>
+      <child link="forward_sonar_link"/>
+    </joint> -->
 
   </model>
 </sdf>
