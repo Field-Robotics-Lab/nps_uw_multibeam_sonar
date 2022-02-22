@@ -26,7 +26,7 @@
   </xacro:macro>
 
   <!-- Generates a sensor element with Blueview P900 parameters -->
-  <xacro:macro name="multibeam_blueview_raster_p900_sensor"
+  <xacro:macro name="multibeam_blueview_p900_raster_sensor"
                params="name sensor_link sonar_image_topic sonar_image_raw_topic
                maxDistance raySkips plotScaler sensorGain writeLog writeFrameInterval
               artificialVehicleVibration constantReflectivity reflectivityDatabaseFile">
@@ -246,7 +246,7 @@
                reflectivityDatabaseFile robot_link joint_xyz ray_visual">
     <xacro:multibeam_blueview_p900_link name="${name}" xyz="${xyz}" rpy="${rpy}" scale="${scale}"/>
     <xacro:multibeam_sonar_joint name="${name}" robot_link="${robot_link}" joint_xyz="${joint_xyz}"/>
-    <xacro:multibeam_blueview_raster_p900_sensor name="${name}" sensor_link="${name}_link"
+    <xacro:multibeam_blueview_p900_raster_sensor name="${name}" sensor_link="${name}_link"
                                sonar_image_topic="${sonar_image_topic}"
                                sonar_image_raw_topic="${sonar_image_raw_topic}"
                                maxDistance="${maxDistance}" raySkips="${raySkips}"
@@ -268,7 +268,7 @@
                robot_link joint_xyz ray_visual">
     <xacro:multibeam_blueview_p900_link name="${name}" xyz="${xyz}" rpy="${rpy}" scale="${scale}"/>
     <xacro:multibeam_sonar_joint name="${name}" robot_link="${robot_link}" joint_xyz="${joint_xyz}"/>
-    <xacro:multibeam_blueview_p900_sensor name="${name}" sensor_link="${name}_link"
+    <xacro:multibeam_blueview_p900_ray_sensor name="${name}" sensor_link="${name}_link"
                                sonar_image_topic="${sonar_image_topic}"
                                sonar_image_raw_topic="${sonar_image_raw_topic}"
                                maxDistance="${maxDistance}" raySkips="${raySkips}"
@@ -300,7 +300,7 @@
     <xacro:multibeam_sonar_standalone_link name="${name}" xyz="0 0 0" rpy="0 0 0"/>
     <xacro:multibeam_blueview_p900_link name="${name}" xyz="0 0 0" rpy="0 0 0" scale="${scale}"/>
     <xacro:multibeam_sonar_joint name="${name}" robot_link="${name}_standalone_base_link" joint_xyz="0 0 0"/>
-    <xacro:multibeam_blueview_p900_sensor name="${name}" sensor_link="${name}_link"
+    <xacro:multibeam_blueview_p900_raster_sensor name="${name}" sensor_link="${name}_link"
                                sonar_image_topic="${sonar_image_topic}"
                                sonar_image_raw_topic="${sonar_image_raw_topic}"
                                maxDistance="${maxDistance}" raySkips="${raySkips}"
