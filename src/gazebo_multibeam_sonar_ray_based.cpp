@@ -116,8 +116,6 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
         std::placeholders::_4, std::placeholders::_5));
 
   this->parentSensor->SetActive(true);
-  this->validPCL = false;
-  this->initialPCL = true;
 
   this->parentSensor_ = this->parentSensor;
   this->width_ = this->width;
@@ -394,8 +392,7 @@ void NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame(const float *_image,
   if (this->parentSensor->IsActive())
   {
     if (this->sonar_image_connect_count_ > 0
-        && this->point_cloud_image_.size().width != 0
-        && this->validPCL == true )
+        && this->point_cloud_image_.size().width != 0 )
       this->ComputeSonarImage();
   }
   else
@@ -675,51 +672,42 @@ void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointClo
   cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
   double hFOV = this->parentSensor->HorzFOV();
 
-  // Check validity of the point cloud data
-  pcl::PointXYZI validCheck = pcl_pointcloud->at(floor(this->height/2.0), floor(this->width/2.0));
-  if ( isnan(validCheck.x) ){
-    this->validPCL = false;
-    if (this->initialPCL == false)
-      ROS_INFO_STREAM("Multibeam Sonar Warning : Nothing caught within the range"
-                      << " (maxDistance = " << this->maxDistance << " m )");
-  }
-  else
-  {
-    if (this->initialPCL == false)
-      this->validPCL = true;
-    this->initialPCL = false;
-  }
-
   // calculate azimuth/elevation angles
   bool angles_calculation_flag = false;
-  if (this->azimuth_angles.size() == 0 && this->validPCL)
+  if (this->azimuth_angles.size() == 0)
     angles_calculation_flag = true;
 
-  for (uint32_t j = 0; j < this->height; j++)
+  for (int j = 0; j < this->nRays; j++)
   {
     if (angles_calculation_flag)
     {
-      pcl::PointXYZI point_forEle = pcl_pointcloud->at(j, 0);
-      this->elevation_angles[j] = atan2(point_forEle.z, point_forEle.x);
+      const double Diff = this->parentSensor->VerticalAngleMax().Radian()
+                          - this->parentSensor->VerticalAngleMin().Radian();
+      this->elevation_angles[j] = ( j * Diff / (this->nRays - 1 )
+                          + this->parentSensor->VerticalAngleMin().Radian() );
     }
 
-    for (uint32_t i = 0; i < this->width; i++, ++iter_image)
+    for (int i = 0; i < this->nBeams; i++, ++iter_image)
     {
       pcl::PointXYZI point = pcl_pointcloud->at(j, this->width - i - 1);
 
       this->point_cloud_image_.at<float>(j, i)
         = sqrt(point.x * point.x + point.y * point.y + point.z * point.z);
-
       if (angles_calculation_flag && j == 0)
-        this->azimuth_angles.push_back(-atan2(point.y, point.x));
+      {
+        const double Diff = this->parentSensor->AngleMax().Radian()
+                            - this->parentSensor->AngleMin().Radian();
+        this->azimuth_angles.push_back( i * Diff / (this->nBeams - 1 )
+                            + this->parentSensor->AngleMin().Radian() );
+      }
 
       if (isnan(*iter_image))
         *iter_image = 100000.0;
     }
   }
 
-  if (this->point_cloud_connect_count_ > 0)
-    this->point_cloud_pub_.publish(this->point_cloud_msg_);
+    if (this->point_cloud_connect_count_ > 0)
+      this->point_cloud_pub_.publish(this->point_cloud_msg_);
 
   this->lock_.unlock();
 }

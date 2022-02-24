@@ -162,8 +162,6 @@ namespace gazebo
     private: int ray_nElevationRays;
     private: float plotScaler;
     private: float sensorGain;
-    private: bool validPCL;
-    private: bool initialPCL;
     protected: bool debugFlag;
 
     /// \brief A pointer to the ROS node.

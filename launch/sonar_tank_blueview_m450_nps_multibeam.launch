@@ -21,4 +21,7 @@
     <param name="filename_format" value="/tmp/SonarImage_capture_%04i.jpg" />
   </node>
 
+  <node pkg="tf" type="static_transform_publisher" name="multibeam_sonar_base_link"
+        args="0 0 0 0 0 0 map forward_sonar_optical_link 50" />
+
 </launch>

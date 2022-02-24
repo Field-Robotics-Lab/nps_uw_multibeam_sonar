@@ -3,24 +3,24 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Generates a link element with Blueview P900 physical & visual characteristics -->
-  <xacro:macro name="multibeam_blueview_p900_link" params="name xyz rpy scale">
+  <xacro:macro name="multibeam_blueview_p900_link" params="name scale">
     <link name="${name}_link">
       <inertial>
         <mass value="4.35"/>
-        <pose xyz="${xyz}" rpy="${rpy}"/>
+        <pose xyz="0 0 0" rpy="0 0 0"/>
         <inertia ixx="0.0360" ixy="0" ixz="0" iyy="0" iyz="0" izz="0.0360"/>
       </inertial>
       <visual>
         <geometry>
           <mesh filename="model://blueview_p900_nps_multibeam/meshes/p900.dae" scale="${scale}"/>
         </geometry>
-        <pose xyz="${xyz}" rpy="${rpy}"/>
+        <pose xyz="0 0 0" rpy="0 0 0"/>
       </visual>
       <collision>
         <geometry>
           <mesh filename="model://blueview_p900_nps_multibeam/meshes/COLLISION-p900.dae" scale="${scale}"/>
         </geometry>
-        <pose xyz="${xyz}" rpy="${rpy}"/>
+        <pose xyz="0 0 0" rpy="0 0 0"/>
       </collision>
     </link>
   </xacro:macro>
@@ -92,7 +92,7 @@
   </xacro:macro>
 
   <xacro:macro name="multibeam_blueview_p900_ray_sensor"
-               params="name sensor_link sonar_image_topic sonar_image_raw_topic
+               params="name pcl_topic_name sensor_link sonar_image_topic sonar_image_raw_topic
                maxDistance raySkips plotScaler sensorGain writeLog writeFrameInterval
                gaussian_noise_mean gaussian_noise_stddev fidelity debug">
     <gazebo reference="${sensor_link}">
@@ -138,7 +138,7 @@
 
         <plugin name="${name}_ray_sonar_sensor" filename="libgazebo_ros_velodyne_gpu_laser.so">
            <topicName>${name}_point_cloud</topicName>
-           <frameName>${sensor_link}</frameName>
+           <!-- <frameName>${name}_forward_sonar_optical_link</frameName> -->
            <organize_cloud>true</organize_cloud>
            <min_range>0.2</min_range>
            <max_range>${maxDistance}</max_range>
@@ -163,7 +163,7 @@
           <!-- ROS publication topics -->
           <imageTopicName>image_raw</imageTopicName>
           <cameraInfoTopicName>image_raw/camera_info</cameraInfoTopicName>
-          <pointCloudTopicName>${name}_point_cloud</pointCloudTopicName>
+          <pointCloudTopicName>${pcl_topic_name}</pointCloudTopicName>
           <sonarImageRawTopicName>${sonar_image_raw_topic}</sonarImageRawTopicName>
           <sonarImageTopicName>${sonar_image_topic}</sonarImageTopicName>
           <frameName>${name}_forward_sonar_optical_link</frameName>
@@ -171,15 +171,6 @@
 
       </sensor>
     </gazebo>
-  </xacro:macro>
-
-  <xacro:macro name="multibeam_sonar_joint"
-               params="name robot_link joint_xyz">
-    <joint name="${name}_joint" type="fixed">
-      <pose xyz="${joint_xyz}" rpy="0 0 0"/>
-      <parent link="${robot_link}"/>
-      <child link="${name}_link"/>
-    </joint>
   </xacro:macro>
 
   <xacro:macro name="multibeam_sonar_visual_link" params="name">
@@ -233,6 +224,28 @@
 
   </xacro:macro>
 
+  <xacro:arg name="standalone" default="false"/>
+  <xacro:arg name="gpu_ray" default="false"/>
+  <xacro:arg name="name" default="blueview_p900"/>
+  <xacro:arg name="maxDistance" default="10"/>
+  <xacro:arg name="raySkips" default="10"/>
+  <xacro:arg name="scale" default="1 1 1"/>
+  <xacro:arg name="sonar_image_topic" default="sonar_image"/>
+  <xacro:arg name="sonar_image_raw_topic" default="sonar_image_raw"/>
+  <xacro:arg name="ray_visual" default="true"/>
+  <xacro:arg name="plotScaler" default="0"/>
+  <xacro:arg name="sensorGain" default="0.02"/>
+  <xacro:arg name="writeLog" default="false"/>
+  <xacro:arg name="debug" default="false"/>
+  <xacro:arg name="writeFrameInterval" default="5"/>
+  <xacro:arg name="artificialVehicleVibration" default="false"/>
+  <xacro:arg name="constantReflectivity" default="true"/>
+  <xacro:arg name="reflectivityDatabaseFile" default="variationalReflectivityDatabase.csv"/>
+  <xacro:arg name="gaussian_noise_mean" default="0.0"/>
+  <xacro:arg name="gaussian_noise_stddev" default="0.0"/>
+  <xacro:arg name="fidelity" default="500"/>
+  <xacro:arg name="robot_name" default=""/>
+
   <!-- Top level macro for generating the link, sensor, joint combo
        The macro will create the link, joint, and sensor for the DVL.
        The DVL can be attached anywhere on the robot (joint_xyz parameter)
@@ -240,12 +253,16 @@
        the robot link (robot_link parameter). -->
 
   <xacro:macro name="multibeam_blueview_p900_raster_macro"
-               params="name xyz rpy scale sonar_image_topic debug
+               params="name scale sonar_image_topic debug
                sonar_image_raw_topic maxDistance raySkips plotScaler sensorGain writeLog
                writeFrameInterval artificialVehicleVibration constantReflectivity
-               reflectivityDatabaseFile robot_link joint_xyz ray_visual">
-    <xacro:multibeam_blueview_p900_link name="${name}" xyz="${xyz}" rpy="${rpy}" scale="${scale}"/>
-    <xacro:multibeam_sonar_joint name="${name}" robot_link="${robot_link}" joint_xyz="${joint_xyz}"/>
+               reflectivityDatabaseFile robot_link ray_visual">
+    <xacro:multibeam_blueview_p900_link name="${name}" scale="${scale}"/>
+    <joint name="multibeam_sonar_joint" type="fixed">
+      <parent link="${robot_link}"/>
+      <child link="${name}_link"/>
+      <xacro:insert_block name="origin"/>\
+    </joint>
     <xacro:multibeam_blueview_p900_raster_sensor name="${name}" debug="${debug}"
                                sonar_image_topic="${sonar_image_topic}"  sensor_link="${name}_link"
                                sonar_image_raw_topic="${sonar_image_raw_topic}"
@@ -262,12 +279,16 @@
   </xacro:macro>
 
   <xacro:macro name="multibeam_blueview_p900_ray_macro"
-               params="name xyz rpy scale sonar_image_topic debug
+               params="name scale sonar_image_topic debug robot_name
                sonar_image_raw_topic maxDistance raySkips plotScaler sensorGain writeLog
                writeFrameInterval gaussian_noise_mean gaussian_noise_stddev fidelity
-               robot_link joint_xyz ray_visual">
-    <xacro:multibeam_blueview_p900_link name="${name}" xyz="${xyz}" rpy="${rpy}" scale="${scale}"/>
-    <xacro:multibeam_sonar_joint name="${name}" robot_link="${robot_link}" joint_xyz="${joint_xyz}"/>
+               robot_link ray_visual *origin">
+    <xacro:multibeam_blueview_p900_link name="${name}" scale="${scale}"/>
+    <joint name="multibeam_sonar_joint" type="fixed">
+      <parent link="${robot_link}"/>
+      <child link="${name}_link"/>
+      <xacro:insert_block name="origin"/>\
+    </joint>
     <xacro:multibeam_blueview_p900_ray_sensor name="${name}" sensor_link="${name}_link"
                                sonar_image_topic="${sonar_image_topic}" debug="${debug}"
                                sonar_image_raw_topic="${sonar_image_raw_topic}"
@@ -276,7 +297,50 @@
                                writeLog="${writeLog}" writeFrameInterval="${writeFrameInterval}"
                                gaussian_noise_mean="${gaussian_noise_mean}"
                                gaussian_noise_stddev="${gaussian_noise_stddev}"
-                               fidelity="${fidelity}"/>
+                               fidelity="${fidelity}" pcl_topic_name="${robot_name}/${name}_point_cloud"/>
+    <!-- Ray Visual -->
+    <xacro:multibeam_sonar_visual_link name="${name}"/>
+    <xacro:multibeam_sonar_visual_joint name="${name}"/>
+    <xacro:multibeam_blueview_p900_visual_ray name="${name}" ray_visual="${ray_visual}"/>
+  </xacro:macro>
+
+  <xacro:macro name="multibeam_blueview_p900_macro"
+               params="name scale sonar_image_topic debug gpu_ray robot_name
+               sonar_image_raw_topic maxDistance raySkips plotScaler sensorGain writeLog
+               writeFrameInterval gaussian_noise_mean gaussian_noise_stddev fidelity
+               artificialVehicleVibration constantReflectivity reflectivityDatabaseFile
+               robot_link ray_visual *origin">
+    <xacro:multibeam_blueview_p900_link name="${name}" scale="${scale}"/>
+    <joint name="multibeam_sonar_joint" type="fixed">
+      <parent link="${robot_link}"/>
+      <child link="${name}_link"/>
+      <xacro:insert_block name="origin"/>\
+    </joint>
+
+    <xacro:if value="$(arg gpu_ray)">
+      <xacro:multibeam_blueview_p900_ray_sensor name="${name}" sensor_link="${name}_link"
+                                sonar_image_topic="${sonar_image_topic}" debug="${debug}"
+                                sonar_image_raw_topic="${sonar_image_raw_topic}"
+                                maxDistance="${maxDistance}" raySkips="${raySkips}"
+                                plotScaler="${plotScaler}" sensorGain="${sensorGain}"
+                                writeLog="${writeLog}" writeFrameInterval="${writeFrameInterval}"
+                                gaussian_noise_mean="${gaussian_noise_mean}"
+                                gaussian_noise_stddev="${gaussian_noise_stddev}"
+                                fidelity="${fidelity}" pcl_topic_name="${robot_name}/${name}_point_cloud"/>
+    </xacro:if>
+    <xacro:unless value="$(arg gpu_ray)">
+      <xacro:multibeam_blueview_p900_raster_sensor name="${name}" debug="${debug}"
+                                sonar_image_topic="${sonar_image_topic}"  sensor_link="${name}_link"
+                                sonar_image_raw_topic="${sonar_image_raw_topic}"
+                                maxDistance="${maxDistance}" raySkips="${raySkips}"
+                                plotScaler="${plotScaler}" sensorGain="${sensorGain}"
+                                writeLog="${writeLog}" writeFrameInterval="${writeFrameInterval}"
+                                artificialVehicleVibration="${artificialVehicleVibration}"
+                                constantReflectivity="${constantReflectivity}"
+                                reflectivityDatabaseFile="${reflectivityDatabaseFile}"/>
+    </xacro:unless>
+
+
     <!-- Ray Visual -->
     <xacro:multibeam_sonar_visual_link name="${name}"/>
     <xacro:multibeam_sonar_visual_joint name="${name}"/>
@@ -285,7 +349,7 @@
 
 
   <!-- For standalone -->
-  <xacro:macro name="multibeam_sonar_standalone_link" params="name xyz rpy">
+  <xacro:macro name="multibeam_sonar_standalone_link" params="name">
     <link name="${name}_standalone_base_link"/>
     <gazebo>
       <static>true</static>
@@ -297,9 +361,12 @@
                sonar_image_raw_topic maxDistance raySkips plotScaler sensorGain writeLog
                writeFrameInterval artificialVehicleVibration constantReflectivity
                reflectivityDatabaseFile ray_visual">
-    <xacro:multibeam_sonar_standalone_link name="${name}" xyz="0 0 0" rpy="0 0 0"/>
-    <xacro:multibeam_blueview_p900_link name="${name}" xyz="0 0 0" rpy="0 0 0" scale="${scale}"/>
-    <xacro:multibeam_sonar_joint name="${name}" robot_link="${name}_standalone_base_link" joint_xyz="0 0 0"/>
+    <xacro:multibeam_sonar_standalone_link name="${name}"/>
+    <xacro:multibeam_blueview_p900_link name="${name}" scale="${scale}"/>
+    <joint name="multibeam_sonar_joint" type="fixed">
+      <parent link="${name}_standalone_base_link"/>
+      <child link="${name}_link"/>
+    </joint>
     <xacro:multibeam_blueview_p900_raster_sensor name="${name}" sensor_link="${name}_link"
                                sonar_image_topic="${sonar_image_topic}"  debug="${debug}"
                                sonar_image_raw_topic="${sonar_image_raw_topic}"
@@ -316,12 +383,15 @@
   </xacro:macro>
 
   <xacro:macro name="multibeam_blueview_p900_ray_standalone_macro"
-               params="name scale sonar_image_topic fidelity debug
+               params="name scale sonar_image_topic fidelity debug robot_name
                sonar_image_raw_topic maxDistance raySkips plotScaler sensorGain writeLog
                writeFrameInterval gaussian_noise_mean gaussian_noise_stddev ray_visual">
-    <xacro:multibeam_sonar_standalone_link name="${name}" xyz="0 0 0" rpy="0 0 0"/>
-    <xacro:multibeam_blueview_p900_link name="${name}" xyz="0 0 0" rpy="0 0 0" scale="${scale}"/>
-    <xacro:multibeam_sonar_joint name="${name}" robot_link="${name}_standalone_base_link" joint_xyz="0 0 0"/>
+    <xacro:multibeam_sonar_standalone_link name="${name}"/>
+    <xacro:multibeam_blueview_p900_link name="${name}" scale="${scale}"/>
+    <joint name="multibeam_sonar_joint" type="fixed">
+      <parent link="${name}_standalone_base_link"/>
+      <child link="${name}_link"/>
+    </joint>
     <xacro:multibeam_blueview_p900_ray_sensor name="${name}" sensor_link="${name}_link"
                                sonar_image_topic="${sonar_image_topic}"  debug="${debug}"
                                sonar_image_raw_topic="${sonar_image_raw_topic}"
@@ -330,34 +400,16 @@
                                writeLog="${writeLog}" writeFrameInterval="${writeFrameInterval}"
                                gaussian_noise_mean="${gaussian_noise_mean}"
                                gaussian_noise_stddev="${gaussian_noise_stddev}"
-                               fidelity="${fidelity}"/>
+                               fidelity="${fidelity}" pcl_topic_name="${name}_point_cloud"/>
     <!-- Ray Visual -->
     <xacro:multibeam_sonar_visual_link name="${name}"/>
     <xacro:multibeam_sonar_visual_joint name="${name}"/>
     <xacro:multibeam_blueview_p900_visual_ray name="${name}" ray_visual="${ray_visual}" />
   </xacro:macro>
 
-  <xacro:arg name="standalone" default="false"/>
-  <xacro:arg name="gpu_ray" default="false"/>
-
   <xacro:if value="$(arg standalone)">
 
     <xacro:unless value="$(arg gpu_ray)">
-      <xacro:arg name="name" default="blueview_p900"/>
-      <xacro:arg name="maxDistance" default="10"/>
-      <xacro:arg name="raySkips" default="10"/>
-      <xacro:arg name="scale" default="1 1 1"/>
-      <xacro:arg name="sonar_image_topic" default="sonar_image"/>
-      <xacro:arg name="sonar_image_raw_topic" default="sonar_image_raw"/>
-      <xacro:arg name="ray_visual" default="true"/>
-      <xacro:arg name="plotScaler" default="0"/>
-      <xacro:arg name="sensorGain" default="0.02"/>
-      <xacro:arg name="writeLog" default="false"/>
-      <xacro:arg name="debug" default="false"/>
-      <xacro:arg name="writeFrameInterval" default="5"/>
-      <xacro:arg name="artificialVehicleVibration" default="false"/>
-      <xacro:arg name="constantReflectivity" default="true"/>
-      <xacro:arg name="reflectivityDatabaseFile" default="variationalReflectivityDatabase.csv"/>
       <xacro:multibeam_blueview_p900_raster_standalone_macro
                 name="$(arg name)" scale="$(arg scale)" debug="$(arg debug)"
                 sonar_image_topic="$(arg sonar_image_topic)"
@@ -372,22 +424,6 @@
     </xacro:unless>
 
     <xacro:if value="$(arg gpu_ray)">
-      <xacro:arg name="standalone" default="false"/>
-      <xacro:arg name="name" default="blueview_p900"/>
-      <xacro:arg name="maxDistance" default="10"/>
-      <xacro:arg name="raySkips" default="10"/>
-      <xacro:arg name="scale" default="1 1 1"/>
-      <xacro:arg name="sonar_image_topic" default="sonar_image"/>
-      <xacro:arg name="sonar_image_raw_topic" default="sonar_image_raw"/>
-      <xacro:arg name="ray_visual" default="true"/>
-      <xacro:arg name="plotScaler" default="0"/>
-      <xacro:arg name="sensorGain" default="0.02"/>
-      <xacro:arg name="writeLog" default="false"/>
-      <xacro:arg name="debug" default="false"/>
-      <xacro:arg name="writeFrameInterval" default="5"/>
-      <xacro:arg name="gaussian_noise_mean" default="0.0"/>
-      <xacro:arg name="gaussian_noise_stddev" default="0.0"/>
-      <xacro:arg name="fidelity" default="500"/>
       <xacro:multibeam_blueview_p900_ray_standalone_macro
                 name="$(arg name)" scale="$(arg scale)" debug="$(arg debug)"
                 sonar_image_topic="$(arg sonar_image_topic)"
@@ -397,9 +433,10 @@
                 writeLog="$(arg writeLog)" writeFrameInterval="$(arg writeFrameInterval)"
                 gaussian_noise_mean="$(arg gaussian_noise_mean)"
                 gaussian_noise_stddev="$(arg gaussian_noise_stddev)"
-                fidelity="$(arg fidelity)"
+                fidelity="$(arg fidelity)" robot_name=""
                 ray_visual="$(arg ray_visual)"/>
     </xacro:if>
 
   </xacro:if>
+
 </robot>

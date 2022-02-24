@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <gui>
+      <camera name='user_camera'>
+        <pose>9.0 3.4 7.5 0.0 0.75 3.1</pose>
+      </camera>
+    </gui>
+
+    <!-- basement tank -->
+    <include>
+      <uri>model://basement_tank</uri>
+      <pose>0 0 0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- cylinder target 1 -->
+    <include>
+      <uri>model://cylinder_target</uri>
+      <name>cylinder_target1</name>
+      <pose>2.1 4.5 2.0 0 0 0</pose>
+      <static>true</static>
+    </include>
+
+    <!-- cylinder target 2 -->
+    <include>
+      <uri>model://cylinder_target</uri>
+      <name>cylinder_target2</name>
+      <pose>2.1 3.5 1.5 0 1.5709 0</pose>
+      <static>true</static>
+    </include>
+
+  </world>
+</sdf>
