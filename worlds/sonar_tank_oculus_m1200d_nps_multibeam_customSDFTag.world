@@ -91,7 +91,7 @@
     <include>
       <uri>model://oculus_m1200d_nps_multibeam</uri>
       <name>blueview_p900</name>
-      <pose>2.1 1.0 2.0 0 0 1.5709</pose>
+      <pose>2.1 1.0 2.0 0 -0.1 1.5709</pose>
       <static>true</static>
     </include>
 

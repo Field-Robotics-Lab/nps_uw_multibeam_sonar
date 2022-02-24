@@ -116,6 +116,8 @@ void NpsGazeboRosMultibeamSonarRay::Load(sensors::SensorPtr _sensor,
         std::placeholders::_4, std::placeholders::_5));
 
   this->parentSensor->SetActive(true);
+  this->validPCL = false;
+  this->initialPCL = true;
 
   this->parentSensor_ = this->parentSensor;
   this->width_ = this->width;
@@ -391,7 +393,9 @@ void NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame(const float *_image,
   this->sensor_update_time_ = this->parentSensor->LastMeasurementTime();
   if (this->parentSensor->IsActive())
   {
-    if (this->sonar_image_connect_count_ > 0 && this->point_cloud_image_.size().width != 0)
+    if (this->sonar_image_connect_count_ > 0
+        && this->point_cloud_image_.size().width != 0
+        && this->validPCL == true )
       this->ComputeSonarImage();
   }
   else
@@ -406,6 +410,7 @@ void NpsGazeboRosMultibeamSonarRay::OnNewLaserFrame(const float *_image,
 void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 {
   this->lock_.lock();
+
   cv::Mat depth_image = this->point_cloud_image_;
   cv::Mat normal_image = this->ComputeNormalImage(depth_image);
   double vFOV = this->parentSensor->VertFOV();
@@ -554,8 +559,8 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   // Construct visual sonar image for rqt plot in sensor::image msg format
   cv_bridge::CvImage img_bridge;
 
-  // Generate image of 32FC1
-  cv::Mat Intensity_image = cv::Mat::zeros(cv::Size(nBeams, nFreq), CV_32FC1);
+  // Generate image of CV_8UC1
+  cv::Mat Intensity_image = cv::Mat::zeros(cv::Size(nBeams, nFreq), CV_8UC1);
 
   const float rangeMax = maxDistance;
   const float rangeRes = ranges[1]-ranges[0];
@@ -605,17 +610,22 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
     for ( int b = 0; b < nBeams; ++b )
     {
       const float range = ranges[r];
-      const int intensity = this->sensorGain * abs(P_Beams[b][r]);
+      const int intensity = floor(10.0*log(abs(P_Beams[nBeams - 1 - b][r])));
       const float begin = angles[b].begin + ThetaShift,
                   end = angles[b].end + ThetaShift;
       const float rad = static_cast<float>(radius) * range/rangeMax;
       // Assume angles are in image frame x-right, y-down
-      cv::ellipse(Intensity_image, origin, cv::Size(rad, rad), 0,
-                  begin * 180/M_PI, end * 180/M_PI,
-                  intensity/2500.0*this->plotScaler,
-                  binThickness);
+      cv::ellipse(Intensity_image, origin, cv::Size(rad, rad), 0.0,
+                  begin * 180.0/M_PI, end * 180.0/M_PI,
+                  intensity, binThickness);
     }
   }
+
+  // Normlize and colorize
+  cv::normalize(Intensity_image,Intensity_image,
+                -255 + this->plotScaler/10*255, 255, cv::NORM_MINMAX);
+  cv::Mat Itensity_image_color;
+  cv::applyColorMap(Intensity_image, Itensity_image_color, cv::COLORMAP_HOT);
 
   // Publish final sonar image
   this->sonar_image_msg_.header.frame_id
@@ -625,8 +635,8 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   this->sonar_image_msg_.header.stamp.nsec
         = this->sensor_update_time_.nsec;
   img_bridge = cv_bridge::CvImage(this->sonar_image_msg_.header,
-                                  sensor_msgs::image_encodings::TYPE_32FC1,
-                                  Intensity_image);
+                                  sensor_msgs::image_encodings::BGR8,
+                                  Itensity_image_color);
   // from cv_bridge to sensor_msgs::Image
   img_bridge.toImageMsg(this->sonar_image_msg_);
 
@@ -650,7 +660,6 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   // from cv_bridge to sensor_msgs::Image
   this->normal_image_pub_.publish(this->normal_image_msg_);
 
-
   this->lock_.unlock();
 }
 
@@ -658,16 +667,32 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
 void NpsGazeboRosMultibeamSonarRay::UpdatePointCloud(const sensor_msgs::PointCloud2ConstPtr& _msg)
 {
   this->lock_.lock();
-  this->point_cloud_image_.create(this->height, this->width, CV_32FC1);
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr pcl_pointcloud(new pcl::PointCloud<pcl::PointXYZI>);
   pcl::fromROSMsg(*_msg,*pcl_pointcloud);
+
+  this->point_cloud_image_.create(this->height, this->width, CV_32FC1);
   cv::MatIterator_<float> iter_image = this->point_cloud_image_.begin<float>();
   double hFOV = this->parentSensor->HorzFOV();
 
+  // Check validity of the point cloud data
+  pcl::PointXYZI validCheck = pcl_pointcloud->at(floor(this->height/2.0), floor(this->width/2.0));
+  if ( isnan(validCheck.x) ){
+    this->validPCL = false;
+    if (this->initialPCL == false)
+      ROS_INFO_STREAM("Multibeam Sonar Warning : Nothing caught within the range"
+                      << " (maxDistance = " << this->maxDistance << " m )");
+  }
+  else
+  {
+    if (this->initialPCL == false)
+      this->validPCL = true;
+    this->initialPCL = false;
+  }
+
   // calculate azimuth/elevation angles
   bool angles_calculation_flag = false;
-  if (this->azimuth_angles.size() == 0)
+  if (this->azimuth_angles.size() == 0 && this->validPCL)
     angles_calculation_flag = true;
 
   for (uint32_t j = 0; j < this->height; j++)

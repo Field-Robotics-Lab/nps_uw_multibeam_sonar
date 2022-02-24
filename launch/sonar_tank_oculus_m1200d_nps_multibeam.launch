@@ -8,11 +8,12 @@
     <arg name="verbose" value="$(arg verbose)"/>
   </include>
 
-  <!-- rqt_image_view for image_raw_sonar -->
-  <node name="rqt_image_view_sonar" pkg="rqt_image_view"
-        type="rqt_image_view" args="/oculus_m1200d/sonar_image">
+  <!-- image_view for sonar image -->
+  <node name="image_view_sonar" pkg="image_view" type="image_view"
+        args="image:=/oculus_m1200d/sonar_image">
+    <param name="window_name" value="oculus_m1200d" />
+    <param name="autosize" value="true" />
+    <param name="filename_format" value="/tmp/SonarImage_capture_%04i.jpg" />
   </node>
-
-
 
 </launch>

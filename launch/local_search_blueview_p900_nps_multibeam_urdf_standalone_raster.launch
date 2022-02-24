@@ -15,15 +15,16 @@
   <arg name="sonar_yaw" default="0"/>
 
   <arg name="maxDistance" default="12"/>
-  <arg name="raySkips" default="1"/>
+  <arg name="raySkips" default="10"/>
   <arg name="sonar_scale" default="'1 1 1'"/>
   <arg name="sonar_image_topic" default="sonar_image"/>
   <arg name="sonar_image_raw_topic" default="sonar_image_raw"/>
   <arg name="ray_visual" default="true"/>
 
-  <arg name="plotScaler" default="10"/>
-  <arg name="sensorGain" default="0.02"/>
-  <arg name="writeLog" default="true"/>
+  <arg name="plotScaler" default="0"/>
+  <arg name="sensorGain" default="0.4"/>
+  <arg name="writeLog" default="false"/>
+  <arg name="debug" default="false"/>
   <arg name="writeFrameInterval" default="5"/>
   <arg name="artificialVehicleVibration" default="false"/>
   <arg name="constantReflectivity" default="true"/>
@@ -36,7 +37,7 @@
 
   <param name="$(arg sonar_name)"
          command="$(find xacro)/xacro '$(find nps_uw_multibeam_sonar)/urdf/multibeam_sonar_blueview_p900.xacro'
-         standalone:=$(arg standalone) name:=$(arg sonar_name) scale:=$(arg sonar_scale)
+         standalone:=$(arg standalone) name:=$(arg sonar_name) scale:=$(arg sonar_scale) debug:=$(arg debug)
          sonar_image_topic:=$(arg sonar_image_topic) sonar_image_raw_topic:=$(arg sonar_image_raw_topic)
          maxDistance:=$(arg maxDistance) raySkips:=$(arg raySkips) plotScaler:=$(arg plotScaler)
          sensorGain:=$(arg sensorGain) writeLog:=$(arg writeLog) writeFrameInterval:=$(arg writeFrameInterval)
@@ -46,9 +47,12 @@
         args="-param $(arg sonar_name) -urdf -x $(arg sonar_x) -y $(arg sonar_y) -z $(arg sonar_z)
               -R $(arg sonar_roll) -P $(arg sonar_pitch) -Y $(arg sonar_yaw) -model $(arg sonar_name)" />
 
-  <!-- rqt_image_view for image_raw_sonar -->
-  <node name="rqt_image_view_sonar" pkg="rqt_image_view"
-        type="rqt_image_view" args="/$(arg sonar_name)/$(arg sonar_image_topic)">
+  <!-- image_view for sonar image -->
+  <node name="image_view_sonar" pkg="image_view" type="image_view"
+        args="image:=/$(arg sonar_name)/$(arg sonar_image_topic)">
+    <param name="window_name" value="$(arg sonar_name)" />
+    <param name="autosize" value="true" />
+    <param name="filename_format" value="/tmp/SonarImage_capture_%04i.jpg" />
   </node>
 
 </launch>

@@ -23,9 +23,10 @@
   <arg name="sonar_image_raw_topic" default="sonar_image_raw"/>
   <arg name="ray_visual" default="true"/>
 
-  <arg name="plotScaler" default="10"/>
-  <arg name="sensorGain" default="0.02"/>
+  <arg name="plotScaler" default="0"/>
+  <arg name="sensorGain" default="0.04"/>
   <arg name="writeLog" default="false"/>
+  <arg name="debug" default="false"/>
   <arg name="writeFrameInterval" default="5"/>
   <arg name="gaussian_noise_mean" default="0.0"/>
   <arg name="gaussian_noise_stddev" default="0.0"/>
@@ -38,7 +39,7 @@
   <param name="$(arg sonar_name)"
          command="$(find xacro)/xacro '$(find nps_uw_multibeam_sonar)/urdf/multibeam_sonar_blueview_p900.xacro'
          standalone:=$(arg standalone) gpu_ray:=$(arg gpu_ray) name:=$(arg sonar_name) scale:=$(arg sonar_scale)
-         sonar_image_topic:=$(arg sonar_image_topic) sonar_image_raw_topic:=$(arg sonar_image_raw_topic)
+         sonar_image_topic:=$(arg sonar_image_topic) sonar_image_raw_topic:=$(arg sonar_image_raw_topic) debug:=$(arg debug)
          maxDistance:=$(arg maxDistance) raySkips:=$(arg raySkips) plotScaler:=$(arg plotScaler) fidelity:=$(arg fidelity)
          sensorGain:=$(arg sensorGain) writeLog:=$(arg writeLog) writeFrameInterval:=$(arg writeFrameInterval)
          gaussian_noise_mean:=$(arg gaussian_noise_mean) gaussian_noise_stddev:=$(arg gaussian_noise_stddev)
@@ -47,9 +48,12 @@
         args="-param $(arg sonar_name) -urdf -x $(arg sonar_x) -y $(arg sonar_y) -z $(arg sonar_z)
               -R $(arg sonar_roll) -P $(arg sonar_pitch) -Y $(arg sonar_yaw) -model $(arg sonar_name)" />
 
-  <!-- rqt_image_view for image_raw_sonar -->
-  <node name="rqt_image_view_sonar" pkg="rqt_image_view"
-        type="rqt_image_view" args="/$(arg sonar_name)/$(arg sonar_image_topic)">
+  <!-- image_view for sonar image -->
+  <node name="image_view_sonar" pkg="image_view" type="image_view"
+        args="image:=/$(arg sonar_name)/$(arg sonar_image_topic)">
+    <param name="window_name" value="$(arg sonar_name)" />
+    <param name="autosize" value="true" />
+    <param name="filename_format" value="/tmp/SonarImage_capture_%04i.jpg" />
   </node>
 
   <node pkg="tf" type="static_transform_publisher" name="multibeam_sonar_base_link" args="0 0 0 0 0 0 world $(arg sonar_name)_forward_sonar_optical_link 50" />

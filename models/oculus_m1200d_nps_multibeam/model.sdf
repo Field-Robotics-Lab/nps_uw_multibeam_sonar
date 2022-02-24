@@ -74,7 +74,7 @@
           <reflectivityDatabaseFile>variationalReflectivityDatabase.csv</reflectivityDatabaseFile>
           <raySkips>0</raySkips>
           <sensorGain>1</sensorGain>
-          <plotScaler>5</plotScaler>
+          <plotScaler>0</plotScaler>
           <writeLog>false</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>

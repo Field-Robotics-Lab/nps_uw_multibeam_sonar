@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-  
+
   <arg name="verbose" default="false"/>
-  
+
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find nps_uw_multibeam_sonar)/worlds/sonar_tank_blueview_m450_nps_multibeam.world"/>
     <arg name="verbose" value="$(arg verbose)"/>
@@ -13,11 +13,12 @@
         args = "&#45;&#45;perspective-file $(find nps_uw_multibeam_sonar)/config/sonar_tank_blueview_m450_images.perspective">
   </node> -->
 
-  <!-- rqt_image_view for image_raw_sonar -->
-  <node name="rqt_image_view_sonar" pkg="rqt_image_view"
-        type="rqt_image_view" args="/blueview_m450/sonar_image">
+  <!-- image_view for sonar image -->
+  <node name="image_view_sonar" pkg="image_view" type="image_view"
+        args="image:=/blueview_m450/sonar_image">
+    <param name="window_name" value="blueview_m450" />
+    <param name="autosize" value="true" />
+    <param name="filename_format" value="/tmp/SonarImage_capture_%04i.jpg" />
   </node>
-
-
 
 </launch>
