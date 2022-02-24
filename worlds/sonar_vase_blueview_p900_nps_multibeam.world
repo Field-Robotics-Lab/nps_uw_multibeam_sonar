@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <gui>
+       <camera name="user_default">
+        <pose>0 3.5 5 0 0.6 -1.5707</pose>
+       </camera>
+     </gui>
+
+    <!-- Undistorted vase -->
+    <include>
+      <pose>1 0 3 0 0 0</pose>
+      <uri>https://fuel.ignitionrobotics.org/1.0/Cole/models/Sunken Vase</uri>
+      <static>true</static>
+    </include>
+
+    <!-- Distorted vase -->
+    <include>
+      <pose>-1 0 3 0 0 0</pose>
+      <uri>model://sunken_vase_distorted</uri>
+      <static>true</static>
+    </include>
+
+  </world>
+</sdf>
