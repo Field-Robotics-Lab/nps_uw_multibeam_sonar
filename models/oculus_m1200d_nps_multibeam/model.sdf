@@ -46,8 +46,8 @@
             <format>R8G8B8</format>
           </image>
           <clip>
-            <near>0.01</near>            <!-- optimal 2m-60m -->
-            <far>10</far>
+            <near>0.1</near>            <!-- optimal 2m-60m -->
+            <far>5</far>
           </clip>
           <depth_camera>
             <output>depths</output>
@@ -63,7 +63,7 @@
           <bandwidth>265.5e3</bandwidth>
           <soundSpeed>1500</soundSpeed>
           <sourceLevel>150</sourceLevel>
-          <maxDistance>1.5</maxDistance>
+          <maxDistance>1.2</maxDistance>
           <constantReflectivity>false</constantReflectivity>
           <!-- custom SDF Tag works when constantReflectivity is false -->
           <customSDFTagReflectivity>true</customSDFTagReflectivity>
@@ -74,7 +74,7 @@
           <reflectivityDatabaseFile>variationalReflectivityDatabase.csv</reflectivityDatabaseFile>
           <raySkips>0</raySkips>
           <sensorGain>1</sensorGain>
-          <plotScaler>5</plotScaler>
+          <plotScaler>0</plotScaler>
           <writeLog>false</writeLog>
           <debugFlag>false</debugFlag>
           <writeFrameInterval>5</writeFrameInterval>

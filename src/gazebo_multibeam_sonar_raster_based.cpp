@@ -30,7 +30,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 
-#include <nps_uw_multibeam_sonar/gazebo_ros_multibeam_sonar.hh>
+#include <nps_uw_multibeam_sonar/gazebo_multibeam_sonar_raster_based.hh>
 #include <gazebo/sensors/Sensor.hh>
 #include <sdf/sdf.hh>
 #include <gazebo/sensors/SensorTypes.hh>
@@ -380,11 +380,14 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   this->nRays = this->height;
   this->ray_nElevationRays = this->height;
   this->ray_nAzimuthRays = 1;
+  this->elevation_angles = new float[this->nRays];
 
   // Print sonar calculation settings
   ROS_INFO_STREAM("");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("============   SONAR PLUGIN LOADED   =============");
+  ROS_INFO_STREAM("==================================================");
+  ROS_INFO_STREAM("============      RASTER VERSION     =============");
   ROS_INFO_STREAM("==================================================");
   ROS_INFO_STREAM("Maximum view range  [m] = " << this->maxDistance);
   ROS_INFO_STREAM("Distance resolution [m] = " <<
@@ -397,7 +400,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   ROS_INFO_STREAM("# of Time data / Beam = " << this->nFreq);
   if (!this->constMu)
   {
-    if (!this->customTag)
+    if (this->customTag)
       ROS_INFO_STREAM("Reflectivity method : Variational (based on custon SDF tag)");
     else
       ROS_INFO_STREAM("Reflectivity method : Variational (based on model name)");
@@ -837,6 +840,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                   hPixelSize,    // _beam_azimuthAngleWidth
                   verticalFOV/180*M_PI,  // _beam_elevationAngleWidth
                   hPixelSize,    // _ray_azimuthAngleWidth
+                  this->elevation_angles, // _ray_elevationAngles
                   vPixelSize*(raySkips+1),  // _ray_elevationAngleWidth
                   this->soundSpeed,    // _soundSpeed
                   this->maxDistance,   // _maxDistance
@@ -922,11 +926,8 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
   for (size_t beam = 0; beam < nBeams; beam ++)
     azimuth_angles.push_back(atan2(static_cast<double>(beam) -
-                    0.5 * static_cast<double>(width-1), fl));
+                    0.5 * static_cast<double>(width), fl));
   this->sonar_image_raw_msg_.azimuth_angles = azimuth_angles;
-  // std::vector<float> elevation_angles;
-  // elevation_angles.push_back(vFOV / 2.0);  // 1D in elevation
-  // this->sonar_image_raw_msg_.elevation_angles = elevation_angles;
   std::vector<float> ranges;
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
@@ -954,8 +955,8 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   // Construct visual sonar image for rqt plot in sensor::image msg format
   cv_bridge::CvImage img_bridge;
 
-  // Generate image of 32FC1
-  cv::Mat Intensity_image = cv::Mat::zeros(cv::Size(nBeams, nFreq), CV_32FC1);
+  // Generate image of 328UC1
+  cv::Mat Intensity_image = cv::Mat::zeros(cv::Size(nBeams, nFreq), CV_8UC1);
 
   const float rangeMax = maxDistance;
   const float rangeRes = ranges[1]-ranges[0];
@@ -1005,17 +1006,22 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
     for ( int b = 0; b < nBeams; ++b )
     {
       const float range = ranges[r];
-      const int intensity = this->sensorGain * abs(P_Beams[b][r]);
+      const int intensity = floor(10.0*log(abs(P_Beams[nBeams - 1 - b][r])));
       const float begin = angles[b].begin + ThetaShift,
                   end = angles[b].end + ThetaShift;
       const float rad = static_cast<float>(radius) * range/rangeMax;
       // Assume angles are in image frame x-right, y-down
       cv::ellipse(Intensity_image, origin, cv::Size(rad, rad), 0,
                   begin * 180/M_PI, end * 180/M_PI,
-                  intensity/2500.0*this->plotScaler,
-                  binThickness);
+                  intensity, binThickness);
     }
   }
+
+  // Normlize and colorize
+  cv::normalize(Intensity_image,Intensity_image,
+                -255 + this->plotScaler/10*255, 255, cv::NORM_MINMAX);
+  cv::Mat Itensity_image_color;
+  cv::applyColorMap(Intensity_image, Itensity_image_color, cv::COLORMAP_HOT);
 
   // Publish final sonar image
   this->sonar_image_msg_.header.frame_id
@@ -1025,8 +1031,8 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   this->sonar_image_msg_.header.stamp.nsec
         = this->depth_sensor_update_time_.nsec;
   img_bridge = cv_bridge::CvImage(this->sonar_image_msg_.header,
-                                  sensor_msgs::image_encodings::TYPE_32FC1,
-                                  Intensity_image);
+                                  sensor_msgs::image_encodings::BGR8,
+                                  Itensity_image_color);
   // from cv_bridge to sensor_msgs::Image
   img_bridge.toImageMsg(this->sonar_image_msg_);
 
@@ -1110,9 +1116,11 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
     double elevation;
     if (this->height > 1)
       elevation = atan2(static_cast<double>(j) -
-                        0.5 * static_cast<double>(this->height-1), fl);
+                        0.5 * static_cast<double>(this->height), fl);
     else
       elevation = 0.0;
+
+    this->elevation_angles[j] = static_cast<float>(elevation);
 
     for (uint32_t i = 0; i < this->width;
          i++, ++iter_x, ++iter_y, ++iter_z, ++iter_rgb, ++iter_image)
@@ -1120,7 +1128,7 @@ void NpsGazeboRosMultibeamSonar::ComputePointCloud(const float *_src)
       double azimuth;
       if (this->width > 1)
         azimuth = atan2(static_cast<double>(i) -
-                        0.5 * static_cast<double>(this->width-1), fl);
+                        0.5 * static_cast<double>(this->width), fl);
       else
         azimuth = 0.0;
 
@@ -1188,11 +1196,11 @@ void NpsGazeboRosMultibeamSonar::ComputeCorrector()
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
     float beam_azimuthAngle = atan2(static_cast<double>(beam) -
-                        0.5 * static_cast<double>(width-1), fl);
+                        0.5 * static_cast<double>(width), fl);
     for (size_t beam_other = 0; beam_other < nBeams; beam_other ++)
     {
       float beam_azimuthAngle_other = atan2(static_cast<double>(beam_other) -
-                        0.5 * static_cast<double>(width-1), fl);
+                        0.5 * static_cast<double>(width), fl);
       float azimuthBeamPattern =
         unnormalized_sinc(M_PI * 0.884 / hPixelSize
         * sin(beam_azimuthAngle-beam_azimuthAngle_other));

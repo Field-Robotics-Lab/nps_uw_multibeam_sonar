@@ -163,6 +163,7 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
                                   float beam_azimuthAngleWidth,
                                   float beam_elevationAngleWidth,
                                   float ray_azimuthAngleWidth,
+                                  float *ray_elevationAngles,
                                   float ray_elevationAngleWidth,
                                   float soundSpeed,
                                   float sourceTerm,
@@ -193,22 +194,16 @@ __global__ void sonar_calculation(thrust::complex<float> *P_Beams,
                       normal_image[normal_index + 1],
                       normal_image[normal_index + 2]};
 
-    // Calculate ray angles
-    double fl = static_cast<double>(width) / (2.0 * tan(hFOV/2.0));
-    float ray_azimuthAngle = atan2(static_cast<double>(beam) -
-                        0.5 * static_cast<double>(width-1), fl);
-    float ray_elevationAngle = atan2(static_cast<double>(ray) -
-                        0.5 * static_cast<double>(height-1), fl);
-
     // Beam pattern
-    // float azimuthBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
-    // 				/ ray_azimuthAngleWidth * sin(ray_azimuthAngle)));
     // only one column of rays for each beam at beam center, interference calculated later
     float azimuthBeamPattern = 1.0;
-    float elevationBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
-      				                    / (beam_elevationAngleWidth) * sin(ray_elevationAngle)));
+    float elevationBeamPattern = 1.0;
+    // float elevationBeamPattern = abs(unnormalized_sinc(M_PI * 0.884
+    //    				                  / (beam_elevationAngleWidth) * sin(ray_elevationAngles[ray])));
 
-    // incidence angle
+    // printf("angles %f", ray_elevationAngles[ray]);
+
+    // incidence angle (taking that of normal_image)
     float incidence = acos(normal[2]); // compute_incidence(ray_azimuthAngle, ray_elevationAngle, normal);
 
     // ----- Point scattering model ------ //
@@ -278,6 +273,7 @@ namespace NpsGazeboSonar
                                      double _beam_azimuthAngleWidth,
                                      double _beam_elevationAngleWidth,
                                      double _ray_azimuthAngleWidth,
+                                     float *_ray_elevationAngles,
                                      double _ray_elevationAngleWidth,
                                      double _soundSpeed,
                                      double _maxDistance,
@@ -338,13 +334,18 @@ namespace NpsGazeboSonar
     const int normal_image_Bytes = normal_image.step * normal_image.rows;
     const int rand_image_Bytes = rand_image.step * rand_image.rows;
     const int reflectivity_image_Bytes = reflectivity_image.step * reflectivity_image.rows;
+    const int ray_elevationAngles_Bytes = sizeof(float) * nRays;
 
     //Allocate device memory
-    float *d_depth_image, *d_normal_image, *d_rand_image, *d_reflectivity_image;
+    float *d_depth_image, *d_normal_image, *d_rand_image, *d_reflectivity_image, *ray_elevationAngles, *d_ray_elevationAngles;
     SAFE_CALL(cudaMalloc((void **)&d_depth_image, depth_image_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_normal_image, normal_image_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_rand_image, rand_image_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_reflectivity_image, reflectivity_image_Bytes), "CUDA Malloc Failed");
+    cudaMallocHost((void **)&ray_elevationAngles, ray_elevationAngles_Bytes);
+    SAFE_CALL(cudaMalloc((void **)&d_ray_elevationAngles, ray_elevationAngles_Bytes), "CUDA Malloc Failed");
+    for (size_t ray = 0; ray < nRays; ray ++)
+      ray_elevationAngles[ray] = _ray_elevationAngles[ray];
 
     //Copy data from OpenCV input image to device memory
     SAFE_CALL(cudaMemcpy(d_depth_image, depth_image.ptr(), depth_image_Bytes,
@@ -354,6 +355,8 @@ namespace NpsGazeboSonar
     SAFE_CALL(cudaMemcpy(d_rand_image, rand_image.ptr(), rand_image_Bytes,
                   cudaMemcpyHostToDevice),"CUDA Memcpy Failed");
     SAFE_CALL(cudaMemcpy(d_reflectivity_image, reflectivity_image.ptr(), reflectivity_image_Bytes,
+                  cudaMemcpyHostToDevice), "CUDA Memcpy Failed");
+    SAFE_CALL(cudaMemcpy(d_ray_elevationAngles, ray_elevationAngles, ray_elevationAngles_Bytes,
                   cudaMemcpyHostToDevice), "CUDA Memcpy Failed");
 
     //Specify a reasonable block size
@@ -390,6 +393,7 @@ namespace NpsGazeboSonar
                                        beam_azimuthAngleWidth,
                                        beam_elevationAngleWidth,
                                        ray_azimuthAngleWidth,
+                                       d_ray_elevationAngles,
                                        ray_elevationAngleWidth,
                                        soundSpeed,
                                        sourceTerm,
@@ -414,6 +418,8 @@ namespace NpsGazeboSonar
     cudaFree(d_rand_image);
     cudaFree(d_reflectivity_image);
     cudaFree(d_P_Beams);
+    cudaFree(d_ray_elevationAngles);
+    cudaFreeHost(ray_elevationAngles);
 
     // For calc time measure
     if (debugFlag)
@@ -576,61 +582,6 @@ namespace NpsGazeboSonar
               "CUDA Memcpy Failed");
     SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
 
-    // ---------------    Windowing   ----------------- //
-    // float *window_diag, *d_window;
-    // const int window_N = nFreq * 1;
-    // const int window_Bytes = sizeof(float) * window_N;
-    // window_diag = (float *)malloc(window_Bytes);
-    // SAFE_CALL(cudaMalloc((void **)&d_window, window_Bytes), "CUDA Malloc Failed");
-
-    // int *diag_ptr, *d_diag_ptr;
-    // const int diag_ptr_N = nBeams * 1;
-    // const int diag_ptr_Bytes = sizeof(int) * diag_ptr_N;
-    // diag_ptr = (int *)malloc(diag_ptr_Bytes);
-    // SAFE_CALL(cudaMalloc((void **)&d_diag_ptr, diag_ptr_Bytes), "CUDA Malloc Failed");
-
-    // // (nBeams x nfreq) * (1 x nFreq) = (nBeams x nFreq)
-    // for (size_t beam = 0; beam < nBeams; beam ++)
-    // {
-    //   for (size_t f = 0; f < nFreq; f++)
-    //   { // Transpose
-    //     P_Beams_Cor_real[beam * nFreq + f] = P_Beams_Cor_real_tmp[f * nBeams + beam];
-    //     P_Beams_Cor_imag[beam * nFreq + f] = P_Beams_Cor_imag_tmp[f * nBeams + beam];
-    //     window_diag[f] = window[f];
-    //   }
-    //   diag_ptr[beam] = (int)beam;
-    // }
-    // SAFE_CALL(cudaMemcpy(d_P_Beams_Cor_real, P_Beams_Cor_real, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(d_P_Beams_Cor_imag, P_Beams_Cor_imag, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(d_window, window_diag, window_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(d_diag_ptr, diag_ptr, diag_ptr_Bytes,
-    //                      cudaMemcpyHostToDevice),
-    //           "CUDA Memcpy Failed");
-
-    // grid_rows = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    // grid_cols = (nFreq + BLOCK_SIZE - 1) / BLOCK_SIZE;
-    // dim3 dimGrid_window(grid_cols, grid_rows);
-    // gpu_diag_matrix_mult<<<dimGrid_window, dimBlock>>>(d_P_Beams_Cor_real, d_diag_ptr, d_window, nFreq);
-    // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
-
-    // gpu_diag_matrix_mult<<<dimGrid_window, dimBlock>>>(d_P_Beams_Cor_imag, d_diag_ptr, d_window, nFreq);
-    // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
-
-    // //Copy back data from destination device meory
-    // SAFE_CALL(cudaMemcpy(P_Beams_Cor_F_real, d_P_Beams_Cor_real, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyDeviceToHost),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaMemcpy(P_Beams_Cor_F_imag, d_P_Beams_Cor_imag, P_Beams_Cor_Bytes,
-    //                      cudaMemcpyDeviceToHost),
-    //           "CUDA Memcpy Failed");
-    // SAFE_CALL(cudaDeviceSynchronize(), "Kernel Launch Failed");
-
     // Return
     for (size_t beam = 0; beam < nBeams; beam ++)
       for (size_t f = 0; f < nFreq; f++)
@@ -644,17 +595,11 @@ namespace NpsGazeboSonar
     cudaFree(d_P_Beams_Cor_F_imag);
     cudaFree(d_P_Beams_Cor_F_real);
     cudaFree(d_beamCorrector_lin);
-    // cudaFree(d_window);
-    // cudaFree(d_diag_ptr);
     cudaFreeHost(P_Beams_Cor_real);
     cudaFreeHost(P_Beams_Cor_imag);
-    // cudaFreeHost(P_Beams_Cor_F_real);
-    // cudaFreeHost(P_Beams_Cor_F_imag);
     cudaFreeHost(P_Beams_Cor_real_tmp);
     cudaFreeHost(P_Beams_Cor_imag_tmp);
     cudaFreeHost(beamCorrector_lin);
-    // cudaFreeHost(window_diag);
-    // cudaFreeHost(diag_ptr);
 
     // For calc time measure
     if (debugFlag)

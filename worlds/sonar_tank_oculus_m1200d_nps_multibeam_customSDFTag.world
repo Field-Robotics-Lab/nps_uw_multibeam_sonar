@@ -21,77 +21,32 @@
       <static>true</static>
     </include> -->
 
-    <model name="coke_distorted">
-      <!-- To get model to show up in empty world without ground plane -->
+    <include>
+      <uri>model://coke_can_steel_distorted</uri>
+      <name>coke_distorted</name>
+      <pose>2.3 1.5 2.0 0 0 0</pose>
       <static>true</static>
-      <pose>2.3 2.0 2.0 0 0 0</pose>
-      <link name="coke_link">
-        <visual name="coke_visual">
-          <geometry>
-            <mesh>
-              <scale>2.0 2.0 2.0</scale>
-              <uri>file://coke_can_example/coke_can_distort.obj</uri>
-            </mesh>
-          </geometry>
-        </visual>
-      </link>
-      <!-- Custom SDF elements for surface properties -->
-      <surface_props:material>metal</surface_props:material>
-      <surface_props:biofouling_rating>10</surface_props:biofouling_rating>
-      <surface_props:roughness>0.1</surface_props:roughness>
-      <!-- <plugin name="custom_surface_properties"
-        filename="libcustom_surface_properties.so"/> -->
-    </model>
+    </include>
 
-    <model name="coke_rubber">
-      <!-- To get model to show up in empty world without ground plane -->
+    <include>
+      <uri>model://coke_can_rubber</uri>
+      <name>coke_rubber</name>
+      <pose>2.1 1.5 2.0 0 0 0</pose>
       <static>true</static>
-      <pose>2.1 2.0 2.0 0 0 0</pose>
-      <link name="coke_link">
-        <visual name="coke_visual">
-          <geometry>
-            <mesh>
-              <scale>2.0 2.0 2.0</scale>
-              <uri>file://coke_can_example/coke_rubber.obj</uri>
-            </mesh>
-          </geometry>
-        </visual>
-      </link>
-      <!-- Custom SDF elements for surface properties -->
-      <surface_props:material>rubber</surface_props:material>
-      <surface_props:biofouling_rating>0</surface_props:biofouling_rating>
-      <surface_props:roughness>0.0</surface_props:roughness>
-      <!-- <plugin name="custom_surface_properties"
-        filename="libcustom_surface_properties.so"/> -->
-    </model>
+    </include>
 
-    <model name="coke_normal">
-      <!-- To get model to show up in empty world without ground plane -->
+    <include>
+      <uri>model://coke_can_steel</uri>
+      <name>coke_normal</name>
+      <pose>1.9 1.5 2.0 0 0 0</pose>
       <static>true</static>
-      <pose>1.9 2.0 2.0 0 0 0</pose>
-      <link name="coke_link">
-        <visual name="coke_visual">
-          <geometry>
-            <mesh>
-              <scale>2.0 2.0 2.0</scale>
-              <uri>file://coke_can_example/coke_can.obj</uri>
-            </mesh>
-          </geometry>
-        </visual>
-      </link>
-      <!-- Custom SDF elements for surface properties -->
-      <surface_props:material>metal</surface_props:material>
-      <surface_props:biofouling_rating>0</surface_props:biofouling_rating>
-      <surface_props:roughness>0.0</surface_props:roughness>
-      <!-- <plugin name="custom_surface_properties"
-        filename="libcustom_surface_properties.so"/> -->
-    </model>
+    </include>
 
     <!-- Blueview P900 -->
     <include>
       <uri>model://oculus_m1200d_nps_multibeam</uri>
-      <name>blueview_p900</name>
-      <pose>2.1 1.0 2.0 0 0 1.5709</pose>
+      <name>oculus_m1200d</name>
+      <pose>2.1 1.0 2.0 0 -0.1 1.5709</pose>
       <static>true</static>
     </include>
 
