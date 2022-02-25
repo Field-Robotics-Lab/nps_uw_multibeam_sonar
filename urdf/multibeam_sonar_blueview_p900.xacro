@@ -314,7 +314,7 @@
     <joint name="multibeam_sonar_joint" type="fixed">
       <parent link="${robot_link}"/>
       <child link="${name}_link"/>
-      <xacro:insert_block name="origin"/>\
+      <xacro:insert_block name="origin"/>
     </joint>
 
     <xacro:if value="$(arg gpu_ray)">
