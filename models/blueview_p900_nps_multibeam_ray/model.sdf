@@ -47,7 +47,7 @@
             <!-- Set vertical FOV by setting image height -->
             <!-- Approx 2 times the spec sheet (sepc: 20 deg.) -->
             <vertical>
-              <samples>500</samples>
+              <samples>300</samples>
               <resolution>1</resolution>
               <min_angle>-0.349066</min_angle>
               <max_angle>0.349066</max_angle>
@@ -66,7 +66,7 @@
                 stddev of 0.01m will put 99.7% of samples within 0.03m of the true
                 reading. -->
             <mean>0.0</mean>
-            <stddev>0.0</stddev>
+            <stddev>0.01</stddev>
           </noise>
         </ray>
 

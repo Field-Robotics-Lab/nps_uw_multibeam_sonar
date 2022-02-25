@@ -400,7 +400,7 @@ void NpsGazeboRosMultibeamSonar::Load(sensors::SensorPtr _parent,
   ROS_INFO_STREAM("# of Time data / Beam = " << this->nFreq);
   if (!this->constMu)
   {
-    if (!this->customTag)
+    if (this->customTag)
       ROS_INFO_STREAM("Reflectivity method : Variational (based on custon SDF tag)");
     else
       ROS_INFO_STREAM("Reflectivity method : Variational (based on model name)");
