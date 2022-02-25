@@ -96,6 +96,6 @@ install(
 )
 
 # for launch
-install(DIRECTORY launch worlds urdf
+install(DIRECTORY launch worlds urdf models
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
         PATTERN "*~" EXCLUDE)
