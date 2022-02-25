@@ -337,7 +337,7 @@ namespace NpsGazeboSonar
     const int ray_elevationAngles_Bytes = sizeof(float) * nRays;
 
     //Allocate device memory
-    float *d_depth_image, *d_normal_image, *d_rand_image, *d_reflectivity_image, *ray_elebationAngles, *ray_elevationAngles, *d_ray_elevationAngles;
+    float *d_depth_image, *d_normal_image, *d_rand_image, *d_reflectivity_image, *ray_elevationAngles, *d_ray_elevationAngles;
     SAFE_CALL(cudaMalloc((void **)&d_depth_image, depth_image_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_normal_image, normal_image_Bytes), "CUDA Malloc Failed");
     SAFE_CALL(cudaMalloc((void **)&d_rand_image, rand_image_Bytes), "CUDA Malloc Failed");
