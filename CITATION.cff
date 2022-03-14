@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Choi
+    given-names: Woen-Sug
+    orcid:  https://orcid.org/0000-0002-1450-1848 
+  - family-names: Olson
+    given-names: Derek R.
+  - family-names: Davis
+    given-names: Duane
+  - family-names: Zhang
+    given-names: Mabel
+  - family-names: Racson
+    given-names: Andy
+  - family-names: Bingham
+    given-names: Brian
+  - family-names: McCarrin
+    given-names: Michael
+  - family-names: Carson
+    given-names: Vogt
+  - family-names: Herman
+    given-names: Jessica
+title: "Physics-Based Modelling and Simulation of Multibeam Echosounder Perception for Autonomous Underwater Manipulation"
+doi: 10.3389/frobt.2021.706646
+date-released: 2021-09-08
+url: "https://github.com/Field-Robotics-Lab/nps_uw_multibeam_sonar"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: Choi
+    given-names: Woen-Sug
+    orcid:  https://orcid.org/0000-0002-1450-1848 
+  - family-names: Olson
+    given-names: Derek R.
+  - family-names: Davis
+    given-names: Duane
+  - family-names: Zhang
+    given-names: Mabel
+  - family-names: Racson
+    given-names: Andy
+  - family-names: Bingham
+    given-names: Brian
+  - family-names: McCarrin
+    given-names: Michael
+  - family-names: Carson
+    given-names: Vogt
+  - family-names: Herman
+    given-names: Jessica
+  doi: "10.3389/frobt.2021.706646"
+  journal: "Frontiers in Robotics and AI"
+  month: 9
+  start: 1 # First page number
+  end: 11 # Last page number
+  title: "Physics-Based Modelling and Simulation of Multibeam Echosounder Perception for Autonomous Underwater Manipulation"
+  volume: 8
+  year: 2021
