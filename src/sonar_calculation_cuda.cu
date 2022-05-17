@@ -700,6 +700,23 @@ namespace NpsGazeboSonar
       duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
       printf("GPU FFT Calc Time %lld/100 [s]\n",
             static_cast<long long int>(duration.count() / 10000));
+
+      // CUDA Memory usage
+      int num_gpus;
+      size_t free, total;
+      double used_gb, free_gb, total_gb;
+      cudaGetDeviceCount( &num_gpus );
+      for ( int gpu_id = 0; gpu_id < num_gpus; gpu_id++ ) {
+          cudaSetDevice( gpu_id );
+          int id;
+          cudaGetDevice( &id );
+          cudaMemGetInfo( &free, &total );
+          total_gb = ( (double)total) / 1e9;
+          free_gb = ( (double)free) / 1e9;
+          used_gb = total_gb - free_gb;
+          printf("GPU (id = %d) memory: used = %0.2f GB, free= %0.2f GB, total= %0.2f GB\n",
+                id, used_gb, free_gb, total_gb);
+      }
     }
 
     return P_Beams_F;
