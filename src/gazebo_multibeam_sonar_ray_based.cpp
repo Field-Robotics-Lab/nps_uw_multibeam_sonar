@@ -540,8 +540,9 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
     geometry_msgs::Vector3 beam_direction;
-    beam_direction.x = 0.0; beam_direction.y = 0.0;
-    beam_direction.z = azimuth_angles[beam];
+    beam_direction.x = cos(azimuth_angles[beam]);
+    beam_direction.y = sin(azimuth_angles[beam]);
+    beam_direction.z = 0.0;
     this->sonar_image_raw_msg_.beam_directions.push_back(beam_direction);
   }
   std::vector<float> ranges;
