@@ -340,7 +340,7 @@ void NpsGazeboRosMultibeamSonarRay::Advertise()
 
   // Publisher for sonar raw data
   ros::AdvertiseOptions sonar_image_raw_ao =
-    ros::AdvertiseOptions::create<acoustic_msgs::SonarImage>(
+    ros::AdvertiseOptions::create<acoustic_msgs::ProjectedSonarImage>(
       this->sonar_image_raw_topic_name_, 1,
       boost::bind(&NpsGazeboRosMultibeamSonarRay::SonarImageConnect, this),
       boost::bind(&NpsGazeboRosMultibeamSonarRay::SonarImageDisconnect, this),
@@ -528,17 +528,32 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
         = this->sensor_update_time_.sec;
   this->sonar_image_raw_msg_.header.stamp.nsec
         = this->sensor_update_time_.nsec;
-  this->sonar_image_raw_msg_.frequency = this->sonarFreq;
-  this->sonar_image_raw_msg_.sound_speed = this->soundSpeed;
-  this->sonar_image_raw_msg_.azimuth_beamwidth = hPixelSize;
-  this->sonar_image_raw_msg_.elevation_beamwidth = hPixelSize*this->nRays;
-  this->sonar_image_raw_msg_.azimuth_angles = this->azimuth_angles;
+  acoustic_msgs::PingInfo ping_info_msg_;
+  ping_info_msg_.frequency = this->sonarFreq;
+  ping_info_msg_.sound_speed = this->soundSpeed;
+  for (size_t beam = 0; beam < nBeams; beam ++)
+  {
+    ping_info_msg_.rx_beamwidths.push_back(static_cast<float>(hFOV/floor(nBeams*2.0-2.0)*2.0));
+    ping_info_msg_.tx_beamwidths.push_back(static_cast<float>(vFOV));
+  }
+  this->sonar_image_raw_msg_.ping_info = ping_info_msg_;
+  for (size_t beam = 0; beam < nBeams; beam ++)
+  {
+    geometry_msgs::Vector3 beam_direction;
+    beam_direction.x = cos(azimuth_angles[beam]);
+    beam_direction.y = sin(azimuth_angles[beam]);
+    beam_direction.z = 0.0;
+    this->sonar_image_raw_msg_.beam_directions.push_back(beam_direction);
+  }
   std::vector<float> ranges;
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
   this->sonar_image_raw_msg_.ranges = ranges;
-  // this->sonar_image_raw_msg_.is_bigendian = false;
-  this->sonar_image_raw_msg_.data_size = 1;  // sizeof(float) * nFreq * nBeams;
+  acoustic_msgs::SonarImageData sonar_image_data;
+  sonar_image_data.is_bigendian = false;
+  sonar_image_data.dtype = 0; //DTYPE_UINT8
+  sonar_image_data.beam_count = nBeams;
+  //this->sonar_image_raw_msg_.data_size = 1;  // sizeof(float) * nFreq * nBeams;
   std::vector<uchar> intensities;
   int Intensity[nBeams][nFreq];
   for (size_t f = 0; f < nFreq; f ++)
@@ -550,8 +565,11 @@ void NpsGazeboRosMultibeamSonarRay::ComputeSonarImage()
       intensities.push_back(counts);
     }
   }
-  this->sonar_image_raw_msg_.intensities = intensities;
+  sonar_image_data.data = intensities;
+  this->sonar_image_raw_msg_.image = sonar_image_data;
   this->sonar_image_raw_pub_.publish(this->sonar_image_raw_msg_);
+
+
 
   // Construct visual sonar image for rqt plot in sensor::image msg format
   cv_bridge::CvImage img_bridge;
