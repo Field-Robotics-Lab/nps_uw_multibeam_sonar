@@ -23,30 +23,30 @@
 
     <include>
       <uri>model://coke_can_steel_distorted</uri>
-      <name>coke_distorted</name>
+      <name>coke_can_steel_distorted</name>
       <pose>2.3 1.5 2.0 0 0 0</pose>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://coke_can_rubber</uri>
-      <name>coke_rubber</name>
+      <name>coke_can_rubber</name>
       <pose>2.1 1.5 2.0 0 0 0</pose>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://coke_can_steel</uri>
-      <name>coke_normal</name>
+      <name>coke_can_steel</name>
       <pose>1.9 1.5 2.0 0 0 0</pose>
       <static>true</static>
     </include>
 
     <!-- Blueview P900 -->
     <include>
-      <uri>model://oculus_m1200d_nps_multibeam</uri>
+      <uri>model://oculus_m1200d_nps_multibeam_customSDFTag</uri>
       <name>oculus_m1200d</name>
-      <pose>2.1 1.0 2.0 0 -0.1 1.5709</pose>
+      <pose>2.1 1.0 2.0 3.14159265359 -0.1 1.5707963268</pose>
       <static>true</static>
     </include>
 

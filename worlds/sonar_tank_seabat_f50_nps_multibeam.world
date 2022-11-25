@@ -32,7 +32,7 @@
     <include>
       <uri>model://seabat_f50_nps_multibeam</uri>
       <name>seabat_f50</name>
-      <pose>2.1 1.0 2.5 0 -0.1 1.5709</pose>
+      <pose>2.1 1.0 2.5 3.14159265359 -0.1 1.5709</pose>
       <static>true</static>
     </include>
 
