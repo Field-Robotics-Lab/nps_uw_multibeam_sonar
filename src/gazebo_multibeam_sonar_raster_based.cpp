@@ -933,14 +933,18 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
                     0.5 * static_cast<double>(width), fl));
   }
   this->sonar_image_raw_msg_.ping_info = ping_info_msg_;
+  
+  std::vector<geometry_msgs::Vector3> beam_directions_stack;
   for (size_t beam = 0; beam < nBeams; beam ++)
   {
     geometry_msgs::Vector3 beam_direction;
     beam_direction.x = cos(azimuth_angles[beam]);
     beam_direction.y = sin(azimuth_angles[beam]);
     beam_direction.z = 0.0;
-    this->sonar_image_raw_msg_.beam_directions.push_back(beam_direction);
+    beam_directions_stack.push_back(beam_direction);
   }
+  this->sonar_image_raw_msg_.beam_directions = beam_directions_stack;
+
   std::vector<float> ranges;
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
