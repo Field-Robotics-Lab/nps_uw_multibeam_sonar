@@ -713,6 +713,9 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
         if (!this->depthCamera->IsVisible(vis))
           continue;
 
+        ROS_INFO_STREAM("Calculating Reflectivity of captured objects using custom SDF Tags");
+        ROS_INFO_STREAM("This may take quite some time for the first frame");
+
         // Loop over every pixel
         for (int i=0; i<reflectivity_image.rows; i++)
         {
@@ -747,9 +750,6 @@ void NpsGazeboRosMultibeamSonar::OnNewImageFrame(const unsigned char *_image,
               FiducialData fd;
               fd.id = vis->Name();
               fd.pt = pt;
-
-              // this->world;
-
 
               // Assign variational reflectivity
               if (!this->customTag)

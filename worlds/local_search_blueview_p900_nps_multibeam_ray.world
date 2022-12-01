@@ -147,7 +147,7 @@
     <include>
       <uri>model://blueview_p900_nps_multibeam_ray</uri>
       <name>blueview_p900_raster</name>
-      <pose>6 0 -93 0.0 0.25 0</pose>
+      <pose>6 0 -93 3.14159265359 0.25 0</pose>
       <static>true</static>
     </include>
 

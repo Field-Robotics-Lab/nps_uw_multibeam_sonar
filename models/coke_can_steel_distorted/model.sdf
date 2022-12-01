@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6" xmlns:surface_props="https://github.com/Field-Robotics-Lab/dave">
-  <model name="coke_can_steel">
+  <model name="coke_can_steel_distorted">
     <link name="link">
       <inertial>
         <pose>0 0 0 0 0 0</pose>
