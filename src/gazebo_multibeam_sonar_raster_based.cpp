@@ -524,7 +524,7 @@ void NpsGazeboRosMultibeamSonar::Advertise()
 
   // Publisher for sonar image
   ros::AdvertiseOptions sonar_image_raw_ao =
-    ros::AdvertiseOptions::create<acoustic_msgs::ProjectedSonarImage>(
+    ros::AdvertiseOptions::create<marine_acoustic_msgs::ProjectedSonarImage>(
       this->sonar_image_raw_topic_name_, 1,
       boost::bind(&NpsGazeboRosMultibeamSonar::DepthImageConnect, this),
       boost::bind(&NpsGazeboRosMultibeamSonar::DepthImageDisconnect, this),
@@ -918,7 +918,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
         = this->depth_sensor_update_time_.sec;
   this->sonar_image_raw_msg_.header.stamp.nsec
         = this->depth_sensor_update_time_.nsec;
-  acoustic_msgs::PingInfo ping_info_msg_;
+  marine_acoustic_msgs::PingInfo ping_info_msg_;
   ping_info_msg_.frequency = this->sonarFreq;
   ping_info_msg_.sound_speed = this->soundSpeed;
   std::vector<float> azimuth_angles;
@@ -949,7 +949,7 @@ void NpsGazeboRosMultibeamSonar::ComputeSonarImage(const float *_src)
   for (size_t i = 0; i < P_Beams[0].size(); i ++)
     ranges.push_back(rangeVector[i]);
   this->sonar_image_raw_msg_.ranges = ranges;
-  acoustic_msgs::SonarImageData sonar_image_data;
+  marine_acoustic_msgs::SonarImageData sonar_image_data;
   sonar_image_data.is_bigendian = false;
   sonar_image_data.dtype = 0; //DTYPE_UINT8
   sonar_image_data.beam_count = nBeams;

@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
  tf
  cv_bridge
  gazebo_plugins
- acoustic_msgs
+ marine_acoustic_msgs
  xacro)
 
 find_package(gazebo REQUIRED)
@@ -51,7 +51,7 @@ catkin_package(
   INCLUDE_DIRS
   LIBRARIES
   CATKIN_DEPENDS
-  acoustic_msgs
+  marine_acoustic_msgs
  )
 
 ## Plugins
